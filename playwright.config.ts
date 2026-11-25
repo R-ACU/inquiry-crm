@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = Number(process.env.PORT ?? 3210);
+/** The English demo (APP_LOCALE=en) runs its own tests in e2e/en against its own preview: `npm run test:e2e:en`. */
+const EN = process.env.APP_LOCALE === "en";
+const PORT = Number(process.env.PORT ?? (EN ? 3212 : 3210));
 const baseURL = `http://127.0.0.1:${PORT}`;
 
 /**
@@ -20,13 +22,15 @@ export default defineConfig({
   use: {
     baseURL,
     headless: true,
-    locale: "de-DE",
-    timezoneId: "Europe/Berlin",
+    locale: EN ? "en-IE" : "de-DE",
+    timezoneId: EN ? "Europe/Dublin" : "Europe/Berlin",
     colorScheme: "light",
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "app", testIgnore: "**/screenshots.spec.ts", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
+    EN
+      ? { name: "app", testMatch: /[\\/]e2e[\\/]en[\\/][^\\/]+\.spec\.ts$/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } }
+      : { name: "app", testIgnore: ["**/screenshots.spec.ts", /[\\/]e2e[\\/]en[\\/]/], use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
     { name: "screenshots", testMatch: "**/screenshots.spec.ts", use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: {

@@ -14,7 +14,11 @@ import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const MIGRATIONS_DIR = path.join(ROOT, "supabase", "migrations");
-const SEED_FILE = path.join(ROOT, "supabase", "seed.sql");
+/**
+ * The seed files in the order supabase/config.toml lists them ([db.seed] sql_paths; a unit test
+ * keeps both lists equal): the German demo (workspace "de"), then the English one ("en").
+ */
+export const SEED_FILES = ["seed.sql", "seed-en.sql"] as const;
 
 const SUPABASE_BOOTSTRAP = /* sql */ `
 create role anon nologin noinherit;
@@ -108,7 +112,7 @@ export async function createTestDatabase(options: { seed?: boolean; seedNow?: Da
   }
   if (options.seed !== false) {
     if (options.seedNow) await db.query("select set_config('app.seed_now', $1, false)", [options.seedNow.toISOString()]);
-    await db.exec(readFileSync(SEED_FILE, "utf8"));
+    for (const file of SEED_FILES) await db.exec(readFileSync(path.join(ROOT, "supabase", file), "utf8"));
   }
 
   return {
@@ -143,3 +147,20 @@ export const SEED = {
 } as const;
 
 export const SEED_PASSWORD = "Lindgruen-Demo-2026";
+
+/** Fixed IDs from supabase/seed-en.sql (workspace "en"). The English seed mirrors the German one row by row. */
+export const SEED_EN = {
+  owner: "a1000000-0000-4000-8000-000000000001",
+  staffConor: "a1000000-0000-4000-8000-000000000002",
+  staffAoife: "a1000000-0000-4000-8000-000000000003",
+  /** Assigned to Conor. */
+  inquiryOfConor: "e1000000-0000-4000-8000-000000000001",
+  /** Assigned to Aoife. */
+  inquiryOfAoife: "e1000000-0000-4000-8000-000000000002",
+  unassignedInquiry: "e1000000-0000-4000-8000-000000000025",
+  contactOfConor: "c1000000-0000-4000-8000-000000000001",
+  /** The inquiry with the accepted AI draft (assigned to Aoife). */
+  inquiryWithDraft: "e1000000-0000-4000-8000-000000000014",
+} as const;
+
+export const SEED_PASSWORD_EN = "Larkspur-Demo-2026";

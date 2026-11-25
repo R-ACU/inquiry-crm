@@ -8,6 +8,22 @@ import { assignInquiry } from "@/lib/actions/inquiries";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Avatar, EmptyAvatar } from "@/components/ui/avatar";
 import { useToast } from "@/components/shell/providers";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    unassigned: "Nicht zugewiesen",
+    label: "Zuständig",
+    nowResponsible: (name: string) => `${name} ist jetzt zuständig.`,
+    removed: "Zuweisung entfernt.",
+  },
+  en: {
+    unassigned: "Unassigned",
+    label: "Assigned to",
+    nowResponsible: (name: string) => `${name} is now assigned.`,
+    removed: "Assignment removed.",
+  },
+});
 
 const NOBODY = "none";
 
@@ -29,7 +45,7 @@ export function AssigneeControl({
   const options = [
     {
       value: NOBODY,
-      label: "Nicht zugewiesen",
+      label: T.unassigned,
       icon: <EmptyAvatar size="sm" label="" />,
     },
     ...team.map((m) => ({ value: m.id, label: m.fullName, icon: <Avatar name={m.fullName} size="sm" /> })),
@@ -37,7 +53,7 @@ export function AssigneeControl({
 
   return (
     <Dropdown
-      label="Zuständig"
+      label={T.label}
       value={value}
       options={options}
       disabled={pending}
@@ -51,7 +67,7 @@ export function AssigneeControl({
             return;
           }
           const name = team.find((m) => m.id === next)?.fullName;
-          toast("success", name ? `${name} ist jetzt zuständig.` : "Zuweisung entfernt.");
+          toast("success", name ? T.nowResponsible(name) : T.removed);
           await refreshViews(queryClient);
           router.refresh();
         })

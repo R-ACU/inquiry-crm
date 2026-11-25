@@ -13,6 +13,12 @@ import {
   type ThemeSlug,
 } from "@/lib/theme/themes";
 import { cn } from "@/lib/cn";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: { demoFor: "Demo für" },
+  en: { demoFor: "Demo for" },
+});
 
 function readCookie(name: string): string | null {
   const match = document.cookie.split("; ").find((part) => part.startsWith(`${name}=`));
@@ -91,7 +97,7 @@ export function setMode(mode: Mode) {
   else apply();
 }
 
-/** "Demo für <Firma>": a quiet line, only in a company theme. */
+/** "Demo für <Firma>" / "Demo for <company>": a quiet line, only in a company theme. */
 export function ThemeNote({ className }: { className?: string }) {
   const company = useSyncExternalStore(
     noop,
@@ -99,7 +105,7 @@ export function ThemeNote({ className }: { className?: string }) {
     () => null,
   );
   if (!company) return null;
-  return <p className={cn("text-xs text-faint", className)}>Demo für {company}</p>;
+  return <p className={cn("text-xs text-faint", className)}>{T.demoFor} {company}</p>;
 }
 
 export function useCompany(): string | null {

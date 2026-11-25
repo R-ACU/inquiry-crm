@@ -2,8 +2,14 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { loadTeam } from "@/lib/data/views";
 import { TeamView } from "@/components/team/team-view";
+import { pick } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Team und API" };
+const T = pick({
+  de: { title: "Team und API", loading: "Wird geladen" },
+  en: { title: "Team & API", loading: "Loading" },
+});
+
+export const metadata: Metadata = { title: T.title };
 
 export default function TeamPage() {
   return (
@@ -15,7 +21,7 @@ export default function TeamPage() {
 
 function TeamSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Wird geladen" className="loading-delayed">
+    <div aria-busy="true" aria-label={T.loading} className="loading-delayed">
       <div className="skeleton h-8 w-48" />
       <div className="skeleton mt-3 h-4 w-80 max-w-full" />
       <div className="mt-7 grid gap-5 xl:grid-cols-12">

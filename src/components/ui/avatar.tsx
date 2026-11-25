@@ -1,5 +1,11 @@
 import { UserRound } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: { unassigned: "Nicht zugewiesen" },
+  en: { unassigned: "Unassigned" },
+});
 
 const TONES = 5;
 
@@ -43,7 +49,7 @@ export function Avatar({ name, size = "md", className }: { name: string; size?: 
 const ICON_SIZES = { xs: "size-2.5", sm: "size-3", md: "size-3.5", lg: "size-4" } as const;
 
 /** Stand-in where nobody is assigned: a quiet dashed circle in the same size as an avatar. */
-export function EmptyAvatar({ size = "md", className, label = "Nicht zugewiesen" }: { size?: keyof typeof SIZES; className?: string; label?: string }) {
+export function EmptyAvatar({ size = "md", className, label = T.unassigned }: { size?: keyof typeof SIZES; className?: string; label?: string }) {
   return (
     <span
       title={label || undefined}

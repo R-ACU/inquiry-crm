@@ -18,8 +18,8 @@ beforeAll(async () => {
   process.env.SUPABASE_URL = mock.url;
   process.env.SUPABASE_PUBLISHABLE_KEY = LOCAL_PUBLISHABLE_KEY;
   await mock.database.db.query(
-    `insert into public.api_keys (name, key_prefix, key_hash, rate_limit_per_minute, created_by)
-     values ('Website', $1, $2, 5, $3)`,
+    `insert into public.api_keys (name, key_prefix, key_hash, rate_limit_per_minute, created_by, workspace)
+     values ('Website', $1, $2, 5, $3, 'de')`,
     [key.prefix, key.hash, SEED.owner],
   );
   ({ POST } = await import("@/app/api/v1/inquiries/route"));
@@ -148,7 +148,7 @@ describe("POST /api/v1/inquiries", () => {
     // A fresh key, because the first one used up its per-minute limit above.
     const second = generateApiKey();
     await mock.database.db.query(
-      `insert into public.api_keys (name, key_prefix, key_hash, created_by) values ('Formular 2', $1, $2, $3)`,
+      `insert into public.api_keys (name, key_prefix, key_hash, created_by, workspace) values ('Formular 2', $1, $2, $3, 'de')`,
       [second.prefix, second.hash, SEED.owner],
     );
     const response = await POST(

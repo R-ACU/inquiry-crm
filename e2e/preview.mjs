@@ -4,6 +4,7 @@
  *
  *   npm run preview            dev server on http://127.0.0.1:3210
  *   PREVIEW_MODE=start npm run preview   production server (run `npm run build` first)
+ *   npm run preview:en         the English demo (APP_LOCALE=en) on :3212, see e2e/en.mjs
  *
  * Both child processes are stopped together on Ctrl+C.
  */
@@ -37,14 +38,26 @@ const env = {
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_local-preview-only",
   APP_URL: `http://127.0.0.1:${APP_PORT}`,
   AI_MODE: process.env.AI_MODE ?? "mock",
-  // The demo-access card on the login page, with the seed accounts, as on the public demo.
-  DEMO_LOGIN_PASSWORD: process.env.DEMO_LOGIN_PASSWORD ?? "Lindgruen-Demo-2026",
-  DEMO_LOGIN_ACCOUNTS:
-    process.env.DEMO_LOGIN_ACCOUNTS ??
-    JSON.stringify([
-      { email: "lena@lindgruen.example", name: "Lena Hoffmann", role: "Inhaberin" },
-      { email: "jonas@lindgruen.example", name: "Jonas Weber", role: "Mitarbeiter" },
-    ]),
+  // The demo-access card on the login page, with the seed accounts, as on the public demos.
+  ...(process.env.APP_LOCALE === "en"
+    ? {
+        DEMO_LOGIN_PASSWORD: process.env.DEMO_LOGIN_PASSWORD ?? "Larkspur-Demo-2026",
+        DEMO_LOGIN_ACCOUNTS:
+          process.env.DEMO_LOGIN_ACCOUNTS ??
+          JSON.stringify([
+            { email: "niamh@larkspur.example", name: "Niamh Byrne", role: "Owner" },
+            { email: "conor@larkspur.example", name: "Conor Walsh", role: "Staff" },
+          ]),
+      }
+    : {
+        DEMO_LOGIN_PASSWORD: process.env.DEMO_LOGIN_PASSWORD ?? "Lindgruen-Demo-2026",
+        DEMO_LOGIN_ACCOUNTS:
+          process.env.DEMO_LOGIN_ACCOUNTS ??
+          JSON.stringify([
+            { email: "lena@lindgruen.example", name: "Lena Hoffmann", role: "Inhaberin" },
+            { email: "jonas@lindgruen.example", name: "Jonas Weber", role: "Mitarbeiter" },
+          ]),
+      }),
 };
 
 const children = [];

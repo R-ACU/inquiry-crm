@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-en/
 /out/
 /build
 *.tsbuildinfo

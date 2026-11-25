@@ -21,6 +21,80 @@ import { SPRING } from "@/components/ui/segmented";
 import { useMember, useToast } from "@/components/shell/providers";
 import { useRiseIn } from "@/components/ui/rise-in";
 import { cn } from "@/lib/cn";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    moved: (label: string) => `Verschoben nach ${label}.`,
+    everyone: "Alle im Team",
+    unassigned: "Nicht zugewiesen",
+    title: "Anfragen",
+    searchLabel: "Anfragen durchsuchen",
+    searchPlaceholder: "Titel, Kontakt oder Firma",
+    assignedTo: "Zuständig",
+    introOwner: "Alle Anfragen des Betriebs nach Stand. Ziehe eine Karte in eine andere Spalte, um den Stand zu ändern.",
+    introStaff: (firstName: string) => `Die Anfragen, die dir zugewiesen sind, ${firstName}. Ziehe eine Karte, um den Stand zu ändern.`,
+    inquiry: "Anfrage",
+    inquiries: "Anfragen",
+    inSelection: " in der Auswahl",
+    open: "offen",
+    columns: "Spalten",
+    emptyColumnFiltered: "Nichts in dieser Spalte",
+    emptyColumn: "Hierher ziehen, um den Stand zu ändern",
+    contactUnknown: "Kontakt unbekannt",
+    matchedByEmail: "Per E-Mail zugeordnet, nicht bestätigt",
+    guests: "Gäste",
+    budget: "Budget",
+    event: "Termin ",
+    assignedToColon: "Zuständig: ",
+    noInquiriesFor: (search: string) => `Keine Anfragen zu „${search}“`,
+    noInquiriesSelection: "Keine Anfragen für diese Auswahl",
+    noMatchSearch: "Gesucht wird in Titel, Kontakt und Firma. Strg und K durchsucht alles.",
+    noMatchFilter: "Niemand im Team hat gerade eine passende Anfrage.",
+    resetSearch: "Suche zurücksetzen",
+    resetFilter: "Filter zurücksetzen",
+    emptyOwner: "Noch keine Anfragen",
+    emptyStaff: "Dir ist noch keine Anfrage zugewiesen",
+    emptyOwnerHint: "Neue Anfragen kommen über das Webformular oder die API. Den Schlüssel dafür legst du unter Team und API an.",
+    emptyStaffHint: "Sobald die Inhaberin oder der Inhaber dir eine Anfrage zuweist, erscheint sie hier.",
+    loading: "Anfragen werden geladen",
+  },
+  en: {
+    moved: (label: string) => `Moved to ${label}.`,
+    everyone: "Everyone on the team",
+    unassigned: "Unassigned",
+    title: "Inquiries",
+    searchLabel: "Search inquiries",
+    searchPlaceholder: "Title, contact or company",
+    assignedTo: "Assigned to",
+    introOwner: "All inquiries of the business by status. Drag a card to another column to change its status.",
+    introStaff: (firstName: string) => `The inquiries assigned to you, ${firstName}. Drag a card to change its status.`,
+    inquiry: "inquiry",
+    inquiries: "inquiries",
+    inSelection: " in this selection",
+    open: "open",
+    columns: "Columns",
+    emptyColumnFiltered: "Nothing in this column",
+    emptyColumn: "Drop here to change the status",
+    contactUnknown: "Contact unknown",
+    matchedByEmail: "Matched by email, not confirmed",
+    guests: "guests",
+    budget: "Budget",
+    event: "Event ",
+    assignedToColon: "Assigned to: ",
+    noInquiriesFor: (search: string) => `No inquiries for “${search}”`,
+    noInquiriesSelection: "No inquiries for this selection",
+    noMatchSearch: "Searches title, contact and company. Ctrl and K searches everything.",
+    noMatchFilter: "Nobody on the team has a matching inquiry right now.",
+    resetSearch: "Reset search",
+    resetFilter: "Reset filter",
+    emptyOwner: "No inquiries yet",
+    emptyStaff: "No inquiry is assigned to you yet",
+    emptyOwnerHint: "New inquiries arrive through the web form or the API. You create the key for it under Team & API.",
+    emptyStaffHint: "As soon as the owner assigns you an inquiry, it appears here.",
+    loading: "Loading inquiries",
+  },
+});
 
 function byEventDate(a: BoardInquiry, b: BoardInquiry) {
   if (a.event_date === b.event_date) return b.created_at.localeCompare(a.created_at);
@@ -89,7 +163,7 @@ export function Board({ inquiries: fromServer, team: teamFromServer }: { inquiri
       if (context?.previous) queryClient.setQueryData(BOARD_KEY, context.previous);
       toast("error", error.message);
     },
-    onSuccess: (_data, { status }) => toast("success", `Verschoben nach ${STATUS_LABELS[status]}.`),
+    onSuccess: (_data, { status }) => toast("success", T.moved(STATUS_LABELS[status])),
     // The move changes figures elsewhere too (overview, open counts per contact).
     onSettled: () => refreshViews(queryClient),
   });
@@ -112,8 +186,8 @@ export function Board({ inquiries: fromServer, team: teamFromServer }: { inquiri
   );
 
   const assigneeOptions = [
-    { value: "all", label: "Alle im Team" },
-    { value: "unassigned", label: "Nicht zugewiesen" },
+    { value: "all", label: T.everyone },
+    { value: "unassigned", label: T.unassigned },
     ...team.map((m) => ({ value: m.id, label: m.fullName })),
   ];
 
@@ -154,13 +228,13 @@ export function Board({ inquiries: fromServer, team: teamFromServer }: { inquiri
   return (
     <div>
       <PageHeader
-        title="Anfragen"
+        title={T.title}
         actions={
           <>
-            <SearchField value={search} onChange={setSearch} label="Anfragen durchsuchen" placeholder="Titel, Kontakt oder Firma" className="sm:w-72" />
+            <SearchField value={search} onChange={setSearch} label={T.searchLabel} placeholder={T.searchPlaceholder} className="sm:w-72" />
             {viewer.role === "owner" && (
               <Dropdown
-                label="Zuständig"
+                label={T.assignedTo}
                 value={assignee}
                 options={assigneeOptions}
                 onChange={setAssignee}
@@ -174,16 +248,16 @@ export function Board({ inquiries: fromServer, team: teamFromServer }: { inquiri
       >
         <p>
           {viewer.role === "owner"
-            ? "Alle Anfragen des Betriebs nach Stand. Ziehe eine Karte in eine andere Spalte, um den Stand zu ändern."
-            : `Die Anfragen, die dir zugewiesen sind, ${viewer.firstName}. Ziehe eine Karte, um den Stand zu ändern.`}
+            ? T.introOwner
+            : T.introStaff(viewer.firstName)}
         </p>
         <p className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px]">
           <span>
-            <span className="figures font-semibold text-fg">{filtered.length}</span> {filtered.length === 1 ? "Anfrage" : "Anfragen"}
-            {filtering ? " in der Auswahl" : ""}
+            <span className="figures font-semibold text-fg">{filtered.length}</span> {filtered.length === 1 ? T.inquiry : T.inquiries}
+            {filtering ? T.inSelection : ""}
           </span>
           <span>
-            <span className="figures font-semibold text-fg">{formatEuro(openCents)}</span> offen
+            <span className="figures font-semibold text-fg">{formatEuro(openCents)}</span> {T.open}
           </span>
         </p>
       </PageHeader>
@@ -194,7 +268,7 @@ export function Board({ inquiries: fromServer, team: teamFromServer }: { inquiri
         <NoMatches search={search.trim()} onReset={resetFilters} />
       ) : (
         <>
-          <nav aria-label="Spalten" className="mt-6 grid grid-cols-4 gap-1 rounded-full bg-track p-1 md:hidden">
+          <nav aria-label={T.columns} className="mt-6 grid grid-cols-4 gap-1 rounded-full bg-track p-1 md:hidden">
             {columns.map(({ status, items }) => {
               const current = visibleColumn === status;
               return (
@@ -258,7 +332,7 @@ export function Board({ inquiries: fromServer, team: teamFromServer }: { inquiri
                   {items.length === 0 && (
                     <li className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-line-strong px-3 py-8 text-center text-[13px] text-muted">
                       <Inbox className="size-4 text-faint" aria-hidden />
-                      {filtering ? "Nichts in dieser Spalte" : "Hierher ziehen, um den Stand zu ändern"}
+                      {filtering ? T.emptyColumnFiltered : T.emptyColumn}
                     </li>
                   )}
                 </ol>
@@ -287,7 +361,7 @@ function InquiryCard({
   const urgent = !closed && days !== null && days >= 0 && days <= 21;
   // Far-away dates need no countdown: the tile already shows month and year.
   const countdown = !closed && days !== null && days <= 60 ? countdownLabel(days) : null;
-  const customer = inquiry.contact?.company ?? inquiry.contact?.full_name ?? "Kontakt unbekannt";
+  const customer = inquiry.contact?.company ?? inquiry.contact?.full_name ?? T.contactUnknown;
 
   return (
     <Link
@@ -313,9 +387,9 @@ function InquiryCard({
           <p className="mt-0.5 flex items-center gap-1.5 text-[13px] text-muted">
             {inquiry.matched_existing_contact && (
               // Intake matched a known contact by e-mail only; the detail page shows what differs.
-              <span title="Per E-Mail zugeordnet, nicht bestätigt" className="shrink-0 text-st-quoted">
+              <span title={T.matchedByEmail} className="shrink-0 text-st-quoted">
                 <ShieldQuestion className="size-3.5" aria-hidden />
-                <span className="sr-only">Per E-Mail zugeordnet, nicht bestätigt: </span>
+                <span className="sr-only">{T.matchedByEmail}: </span>
               </span>
             )}
             <span className="truncate" title={customer}>
@@ -329,13 +403,13 @@ function InquiryCard({
           <span className="inline-flex items-center gap-1">
             <UsersRound className="size-3.5 text-faint" aria-hidden />
             {inquiry.guest_count}
-            <span className="sr-only">Gäste</span>
+            <span className="sr-only">{T.guests}</span>
           </span>
         )}
         <span className="inline-flex items-center gap-1 whitespace-nowrap">
           <Wallet className="size-3.5 text-faint" aria-hidden />
           {formatEuro(inquiry.budget_cents)}
-          <span className="sr-only">Budget</span>
+          <span className="sr-only">{T.budget}</span>
         </span>
         <span className="ml-auto flex items-center gap-2">
           {countdown && (
@@ -346,7 +420,7 @@ function InquiryCard({
               )}
             >
               {urgent && <CalendarClock className="size-3.5" aria-hidden />}
-              <span className="sr-only">Termin </span>
+              <span className="sr-only">{T.event}</span>
               {countdown}
             </span>
           )}
@@ -354,7 +428,7 @@ function InquiryCard({
             (inquiry.assignee ? (
               <span title={inquiry.assignee.full_name}>
                 <Avatar name={inquiry.assignee.full_name} size="sm" />
-                <span className="sr-only">Zuständig: {inquiry.assignee.full_name}</span>
+                <span className="sr-only">{T.assignedToColon}{inquiry.assignee.full_name}</span>
               </span>
             ) : (
               <EmptyAvatar size="sm" />
@@ -371,12 +445,12 @@ function NoMatches({ search, onReset }: { search: string; onReset: () => void })
       <span className="inline-flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent-fg">
         <SearchX className="size-5" aria-hidden />
       </span>
-      <h2 className="heading mt-4 text-lg">{search ? `Keine Anfragen zu „${search}“` : "Keine Anfragen für diese Auswahl"}</h2>
+      <h2 className="heading mt-4 text-lg">{search ? T.noInquiriesFor(search) : T.noInquiriesSelection}</h2>
       <p className="mt-1.5 max-w-sm text-sm text-muted">
-        {search ? "Gesucht wird in Titel, Kontakt und Firma. Strg und K durchsucht alles." : "Niemand im Team hat gerade eine passende Anfrage."}
+        {search ? T.noMatchSearch : T.noMatchFilter}
       </p>
       <button type="button" onClick={onReset} className={buttonClasses("secondary", "md", "mt-6")}>
-        {search ? "Suche zurücksetzen" : "Filter zurücksetzen"}
+        {search ? T.resetSearch : T.resetFilter}
       </button>
     </div>
   );
@@ -388,11 +462,9 @@ function EmptyBoard({ owner }: { owner: boolean }) {
       <span className="inline-flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent-fg">
         <Inbox className="size-5" aria-hidden />
       </span>
-      <h2 className="heading mt-4 text-lg">{owner ? "Noch keine Anfragen" : "Dir ist noch keine Anfrage zugewiesen"}</h2>
+      <h2 className="heading mt-4 text-lg">{owner ? T.emptyOwner : T.emptyStaff}</h2>
       <p className="mt-1.5 max-w-sm text-sm text-muted">
-        {owner
-          ? "Neue Anfragen kommen über das Webformular oder die API. Den Schlüssel dafür legst du unter Team und API an."
-          : "Sobald die Inhaberin oder der Inhaber dir eine Anfrage zuweist, erscheint sie hier."}
+        {owner ? T.emptyOwnerHint : T.emptyStaffHint}
       </p>
     </div>
   );
@@ -400,7 +472,7 @@ function EmptyBoard({ owner }: { owner: boolean }) {
 
 export function BoardSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Anfragen werden geladen" className="loading-delayed">
+    <div aria-busy="true" aria-label={T.loading} className="loading-delayed">
       <div className="skeleton h-8 w-40" />
       <div className="skeleton mt-3 h-4 w-96 max-w-full" />
       <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

@@ -25,7 +25,7 @@ import { BOARD_KEY, fetchBoard } from "@/lib/client/views";
 import { ROLE_LABELS } from "@/lib/domain/status";
 import { formatRelativeDay } from "@/lib/domain/time";
 import { MOTION_KEY } from "@/lib/theme/themes";
-import { Brand } from "@/components/brand";
+import { BRAND, Brand } from "@/components/brand";
 import { Avatar } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -34,6 +34,113 @@ import { setMode, useCompany, useMode } from "@/components/theme/theme-client";
 import { CommandPalette } from "./command-palette";
 import type { ShellMember } from "./providers";
 import { cn } from "@/lib/cn";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    navOverview: "Übersicht",
+    navInquiries: "Anfragen",
+    navContacts: "Kontakte",
+    navTeam: "Team",
+    // Second key of "G, <key>" per page, plus keys that stand for another one.
+    keyOverview: "o",
+    keyInquiries: "a",
+    keyContacts: "k",
+    keyTeam: "t",
+    keyAliases: { "ü": "o" } as Record<string, string>,
+    goOverview: (name: string) => `${name}, zur Übersicht`,
+    mainNav: "Hauptnavigation",
+    sections: "Bereiche",
+    demoFor: "Demo für",
+    searchAria: "Suchen (Strg und K)",
+    search: "Suchen",
+    ctrlK: "Strg K",
+    lightTheme: "Helles Design",
+    darkTheme: "Dunkles Design",
+    toLight: "Zum hellen Design wechseln",
+    toDark: "Zum dunklen Design wechseln",
+    profileMenu: "Profilmenü",
+    teamAndApi: "Team und API",
+    settings: "Einstellungen",
+    shortcuts: "Tastenkürzel",
+    signOut: "Abmelden",
+    notifications: "Benachrichtigungen",
+    notificationsNew: (n: number) => `Benachrichtigungen, ${n} neu`,
+    newLast14: "Neu in den letzten 14 Tagen",
+    noNew: "Keine neuen Anfragen. Neue Eingänge über das Webformular oder die API erscheinen hier.",
+    newInquiryFor: (name: string) => `Neue Anfrage, ${name}`,
+    newInquiryUnassigned: "Neue Anfrage, noch niemand zuständig",
+    unread: "ungelesen",
+    then: "dann",
+    close: "Schließen",
+    done: "Fertig",
+    reduceMotion: "Animationen reduzieren",
+    reduceMotionHint: "Zahlen und Diagramme erscheinen sofort, ohne Bewegung. Gilt nur in diesem Browser. Ist Bewegung im System reduziert, gilt das ohnehin.",
+    shortcutRows: (owner: boolean): { keys: string[]; label: string }[] => [
+      { keys: ["Strg", "K"], label: "Suchen und Befehle" },
+      { keys: ["/"], label: "Suche auf der Seite" },
+      { keys: ["G", "Ü"], label: "Zur Übersicht (auch G, O)" },
+      { keys: ["G", "A"], label: "Zu den Anfragen" },
+      { keys: ["G", "K"], label: "Zu den Kontakten" },
+      ...(owner ? [{ keys: ["G", "T"], label: "Zu Team und API" }] : []),
+      { keys: ["D"], label: "Hell oder dunkel" },
+      { keys: ["Strg", "Enter"], label: "Notiz speichern" },
+      { keys: ["?"], label: "Diese Hilfe" },
+      { keys: ["Esc"], label: "Fenster schließen" },
+    ],
+  },
+  en: {
+    navOverview: "Overview",
+    navInquiries: "Inquiries",
+    navContacts: "Contacts",
+    navTeam: "Team",
+    keyOverview: "o",
+    keyInquiries: "i",
+    keyContacts: "c",
+    keyTeam: "t",
+    keyAliases: {} as Record<string, string>,
+    goOverview: (name: string) => `${name}, go to overview`,
+    mainNav: "Main navigation",
+    sections: "Sections",
+    demoFor: "Demo for",
+    searchAria: "Search (Ctrl and K)",
+    search: "Search",
+    ctrlK: "Ctrl K",
+    lightTheme: "Light theme",
+    darkTheme: "Dark theme",
+    toLight: "Switch to light theme",
+    toDark: "Switch to dark theme",
+    profileMenu: "Profile menu",
+    teamAndApi: "Team & API",
+    settings: "Settings",
+    shortcuts: "Keyboard shortcuts",
+    signOut: "Sign out",
+    notifications: "Notifications",
+    notificationsNew: (n: number) => `Notifications, ${n} new`,
+    newLast14: "New in the last 14 days",
+    noNew: "No new inquiries. New arrivals via the web form or the API appear here.",
+    newInquiryFor: (name: string) => `New inquiry, ${name}`,
+    newInquiryUnassigned: "New inquiry, nobody assigned yet",
+    unread: "unread",
+    then: "then",
+    close: "Close",
+    done: "Done",
+    reduceMotion: "Reduce motion",
+    reduceMotionHint: "Numbers and charts appear instantly, without motion. Applies to this browser only. If motion is reduced in your system, that applies anyway.",
+    shortcutRows: (owner: boolean): { keys: string[]; label: string }[] => [
+      { keys: ["Ctrl", "K"], label: "Search and commands" },
+      { keys: ["/"], label: "Search on the page" },
+      { keys: ["G", "O"], label: "Go to overview" },
+      { keys: ["G", "I"], label: "Go to inquiries" },
+      { keys: ["G", "C"], label: "Go to contacts" },
+      ...(owner ? [{ keys: ["G", "T"], label: "Go to team & API" }] : []),
+      { keys: ["D"], label: "Light or dark" },
+      { keys: ["Ctrl", "Enter"], label: "Save note" },
+      { keys: ["?"], label: "This help" },
+      { keys: ["Esc"], label: "Close window" },
+    ],
+  },
+});
 
 interface NavItem {
   href: string;
@@ -44,10 +151,10 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { href: "/", label: "Übersicht", icon: LayoutDashboard, key: "o" },
-  { href: "/inquiries", label: "Anfragen", icon: Inbox, key: "a" },
-  { href: "/contacts", label: "Kontakte", icon: UsersRound, key: "k" },
-  { href: "/team", label: "Team", icon: Settings2, key: "t", ownerOnly: true },
+  { href: "/", label: T.navOverview, icon: LayoutDashboard, key: T.keyOverview },
+  { href: "/inquiries", label: T.navInquiries, icon: Inbox, key: T.keyInquiries },
+  { href: "/contacts", label: T.navContacts, icon: UsersRound, key: T.keyContacts },
+  { href: "/team", label: T.navTeam, icon: Settings2, key: T.keyTeam, ownerOnly: true },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -100,7 +207,8 @@ export function AppHeader({ member }: { member: ShellMember }) {
       if (pendingG.current !== null) {
         window.clearTimeout(pendingG.current);
         pendingG.current = null;
-        const key = event.key.toLowerCase() === "ü" ? "o" : event.key.toLowerCase();
+        const typed = event.key.toLowerCase();
+        const key = T.keyAliases[typed] ?? typed;
         const target = items.find((item) => item.key === key);
         if (target) {
           event.preventDefault();
@@ -138,11 +246,11 @@ export function AppHeader({ member }: { member: ShellMember }) {
     <>
       <header className="sticky top-0 z-30 bg-canvas/80 backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto flex h-[72px] max-w-[1680px] items-center gap-3 px-4 md:gap-5 md:px-8">
-          <Link href="/" aria-label="Lindgrün, zur Übersicht" className="press shrink-0 rounded-xl">
+          <Link href="/" aria-label={T.goOverview(BRAND.name)} className="press shrink-0 rounded-xl">
             <Brand subtitle={false} />
           </Link>
 
-          <nav aria-label="Hauptnavigation" className="hidden items-center gap-1 rounded-full bg-surface p-1 shadow-card md:flex">
+          <nav aria-label={T.mainNav} className="hidden items-center gap-1 rounded-full bg-surface p-1 shadow-card md:flex">
             {items.map((item) => {
               const active = isActive(pathname, item.href);
               return (
@@ -167,19 +275,19 @@ export function AppHeader({ member }: { member: ShellMember }) {
             {company && (
               <span className="mr-2 hidden items-center gap-2 text-xs text-faint xl:inline-flex">
                 <span className="size-1.5 rounded-full bg-accent" aria-hidden />
-                Demo für {company}
+                {T.demoFor} {company}
               </span>
             )}
             <button
               type="button"
               onClick={() => setPalette(true)}
-              aria-label="Suchen (Strg und K)"
+              aria-label={T.searchAria}
               className="press group flex h-10 items-center gap-2 rounded-full bg-surface px-3 text-sm text-muted shadow-card hover:text-fg hover:shadow-lift sm:w-64 sm:pr-2 sm:pl-4"
             >
               <Search className="size-4 shrink-0" aria-hidden />
-              <span className="hidden flex-1 text-left sm:inline">Suchen</span>
+              <span className="hidden flex-1 text-left sm:inline">{T.search}</span>
               <kbd className="hidden h-6 items-center rounded-full bg-raised px-2 font-sans text-[11px] font-medium text-muted sm:inline-flex">
-                Strg K
+                {T.ctrlK}
               </kbd>
             </button>
             <ModeToggle />
@@ -193,7 +301,7 @@ export function AppHeader({ member }: { member: ShellMember }) {
 
       {/* Phone: the same areas as a tab bar at the bottom, in thumb reach. */}
       <nav
-        aria-label="Bereiche"
+        aria-label={T.sections}
         className="fixed inset-x-3 bottom-3 z-30 rounded-full bg-surface/90 pb-[env(safe-area-inset-bottom)] shadow-pop backdrop-blur-xl md:hidden"
       >
         <div className={cn("grid gap-1 p-1.5", owner ? "grid-cols-4" : "grid-cols-3")}>
@@ -236,11 +344,11 @@ function ModeToggle() {
   const mode = useMode();
   const dark = mode === "dark";
   return (
-    <Tooltip content={dark ? "Helles Design" : "Dunkles Design"} keys={["D"]}>
+    <Tooltip content={dark ? T.lightTheme : T.darkTheme} keys={["D"]}>
       <button
         type="button"
         onClick={() => setMode(dark ? "light" : "dark")}
-        aria-label={dark ? "Zum hellen Design wechseln" : "Zum dunklen Design wechseln"}
+        aria-label={dark ? T.toLight : T.toDark}
         className={iconButton}
       >
         <AnimatePresence initial={false} mode="popLayout">
@@ -276,7 +384,7 @@ function ProfileMenu({
   return (
     <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger
-        aria-label="Profilmenü"
+        aria-label={T.profileMenu}
         className="press flex items-center gap-2.5 rounded-full bg-surface p-1 shadow-card outline-offset-2 hover:shadow-lift xl:pr-4"
       >
         <Avatar name={member.fullName} />
@@ -299,23 +407,23 @@ function ProfileMenu({
             <DropdownMenu.Item asChild className={menuItem}>
               <Link href="/team">
                 <Settings2 aria-hidden />
-                Team und API
+                {T.teamAndApi}
               </Link>
             </DropdownMenu.Item>
           )}
           <DropdownMenu.Item className={menuItem} onSelect={onSettings}>
             <SlidersHorizontal aria-hidden />
-            Einstellungen
+            {T.settings}
           </DropdownMenu.Item>
           <DropdownMenu.Item className={menuItem} onSelect={onShortcuts}>
             <Keyboard aria-hidden />
-            Tastenkürzel
+            {T.shortcuts}
             <kbd className="ml-auto rounded-md border border-line px-1.5 font-sans text-[11px] text-muted">?</kbd>
           </DropdownMenu.Item>
           <DropdownMenu.Separator className="mx-1 h-px bg-line" />
           <DropdownMenu.Item className={menuItem} onSelect={onSignOut}>
             <LogOut aria-hidden />
-            Abmelden
+            {T.signOut}
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
@@ -338,7 +446,7 @@ function Notifications({ member }: { member: ShellMember }) {
   }, [inquiries, member, since]);
 
   const unread = seen === null ? 0 : items.filter((i) => Date.parse(i.created_at) > seen).length;
-  const label = unread > 0 ? `Benachrichtigungen, ${unread} neu` : "Benachrichtigungen";
+  const label = unread > 0 ? T.notificationsNew(unread) : T.notifications;
 
   return (
     <Popover.Root
@@ -368,9 +476,9 @@ function Notifications({ member }: { member: ShellMember }) {
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content align="end" sideOffset={8} aria-label={label} className={cn(panel, "w-[min(23rem,calc(100vw-2rem))]")}>
-          <p className="px-2.5 pt-2 pb-2 text-sm font-medium">Neu in den letzten 14 Tagen</p>
+          <p className="px-2.5 pt-2 pb-2 text-sm font-medium">{T.newLast14}</p>
           {items.length === 0 ? (
-            <p className="px-2.5 pb-3 text-[13px] text-muted">Keine neuen Anfragen. Neue Eingänge über das Webformular oder die API erscheinen hier.</p>
+            <p className="px-2.5 pb-3 text-[13px] text-muted">{T.noNew}</p>
           ) : (
             <ul className="flex flex-col gap-1">
               {items.map((inquiry) => (
@@ -391,11 +499,11 @@ function Notifications({ member }: { member: ShellMember }) {
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[13px] font-medium text-fg">{inquiry.title}</span>
                         <span className="block text-xs text-muted">
-                          {inquiry.assignee ? `Neue Anfrage, ${inquiry.assignee.full_name}` : "Neue Anfrage, noch niemand zuständig"}
+                          {inquiry.assignee ? T.newInquiryFor(inquiry.assignee.full_name) : T.newInquiryUnassigned}
                         </span>
                       </span>
                       {seen !== null && Date.parse(inquiry.created_at) > seen && (
-                        <span className="mt-2 size-2 shrink-0 rounded-full bg-accent" aria-label="ungelesen" />
+                        <span className="mt-2 size-2 shrink-0 rounded-full bg-accent" aria-label={T.unread} />
                       )}
                       <span className="shrink-0 pt-0.5 text-xs text-muted">{formatRelativeDay(inquiry.created_at)}</span>
                     </Link>
@@ -417,24 +525,13 @@ const Key = ({ children }: { children: string }) => (
 );
 
 function ShortcutsDialog({ open, onClose, owner }: { open: boolean; onClose: () => void; owner: boolean }) {
-  const rows: { keys: string[]; label: string }[] = [
-    { keys: ["Strg", "K"], label: "Suchen und Befehle" },
-    { keys: ["/"], label: "Suche auf der Seite" },
-    { keys: ["G", "Ü"], label: "Zur Übersicht (auch G, O)" },
-    { keys: ["G", "A"], label: "Zu den Anfragen" },
-    { keys: ["G", "K"], label: "Zu den Kontakten" },
-    ...(owner ? [{ keys: ["G", "T"], label: "Zu Team und API" }] : []),
-    { keys: ["D"], label: "Hell oder dunkel" },
-    { keys: ["Strg", "Enter"], label: "Notiz speichern" },
-    { keys: ["?"], label: "Diese Hilfe" },
-    { keys: ["Esc"], label: "Fenster schließen" },
-  ];
+  const rows = T.shortcutRows(owner);
   return (
-    <Dialog open={open} onClose={onClose} label="Tastenkürzel" className="max-w-md">
+    <Dialog open={open} onClose={onClose} label={T.shortcuts} className="max-w-md">
       <div className="flex items-center justify-between border-b border-line px-5 py-4">
-        <h2 className="heading text-base">Tastenkürzel</h2>
+        <h2 className="heading text-base">{T.shortcuts}</h2>
         <button type="button" onClick={onClose} className="press rounded-full px-3 py-1 text-sm text-muted hover:bg-hover hover:text-fg">
-          Schließen
+          {T.close}
         </button>
       </div>
       <ul className="flex flex-col gap-1 p-3">
@@ -444,7 +541,7 @@ function ShortcutsDialog({ open, onClose, owner }: { open: boolean; onClose: () 
             <span className="flex items-center gap-1">
               {row.keys.map((k, i) => (
                 <span key={k} className="flex items-center gap-1">
-                  {i > 0 && <span className="text-xs text-muted">{row.keys[0] === "G" ? "dann" : "+"}</span>}
+                  {i > 0 && <span className="text-xs text-muted">{row.keys[0] === "G" ? T.then : "+"}</span>}
                   <Key>{k}</Key>
                 </span>
               ))}
@@ -469,21 +566,21 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Dialog open onClose={onClose} label="Einstellungen" className="max-w-md">
+    <Dialog open onClose={onClose} label={T.settings} className="max-w-md">
       <div className="flex items-center justify-between border-b border-line px-5 py-4">
-        <h2 className="heading text-base">Einstellungen</h2>
+        <h2 className="heading text-base">{T.settings}</h2>
         <button type="button" onClick={onClose} className="press rounded-full px-3 py-1 text-sm text-muted hover:bg-hover hover:text-fg">
-          Fertig
+          {T.done}
         </button>
       </div>
       <div className="p-5">
         <div className="flex items-start justify-between gap-6">
           <div>
             <p id="motion-label" className="text-sm font-medium">
-              Animationen reduzieren
+              {T.reduceMotion}
             </p>
             <p className="mt-1 text-[13px] leading-relaxed text-muted">
-              Zahlen und Diagramme erscheinen sofort, ohne Bewegung. Gilt nur in diesem Browser. Ist Bewegung im System reduziert, gilt das ohnehin.
+              {T.reduceMotionHint}
             </p>
           </div>
           <button

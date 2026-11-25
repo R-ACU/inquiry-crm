@@ -69,3 +69,37 @@ jobs:
           name: playwright-traces
           path: test-results/
           retention-days: 7
+
+  e2e-en:
+    name: English build and browser tests
+    runs-on: ubuntu-latest
+    needs: checks
+    timeout-minutes: 20
+    env:
+      # The English demo: same code, built with APP_LOCALE=en, signed in as the accounts of the
+      # English workspace. The stand-in holds both workspaces, so the tests also see the German one
+      # stay out of reach. e2e/en.mjs sets the locale, ports 3212/3213 and the .next-en build folder.
+      SUPABASE_URL: http://127.0.0.1:3213
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_local-preview-only
+      APP_URL: http://127.0.0.1:3212
+      AI_MODE: mock
+      DEMO_LOGIN_PASSWORD: Larkspur-Demo-2026
+      DEMO_LOGIN_ACCOUNTS: '[{"email":"niamh@larkspur.example","name":"Niamh Byrne","role":"Owner"},{"email":"conor@larkspur.example","name":"Conor Walsh","role":"Staff"}]'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build:en
+      - run: npm run test:e2e:en
+        env:
+          PREVIEW_MODE: start
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure()
+        with:
+          name: playwright-traces-en
+          path: test-results/
+          retention-days: 7

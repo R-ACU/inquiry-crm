@@ -11,6 +11,26 @@ import { inputClasses } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { MotionProvider } from "@/components/theme/motion-provider";
 import { cn } from "@/lib/cn";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    demoAccess: "Demo-Zugang",
+    password: "Passwort",
+    openDemo: (role: string, name: string) => `Demo als ${role} öffnen (${name})`,
+    email: "E-Mail-Adresse",
+    emailPlaceholder: "name@betrieb.de",
+    signIn: "Anmelden",
+  },
+  en: {
+    demoAccess: "Demo access",
+    password: "Password",
+    openDemo: (role: string, name: string) => `Open demo as ${role} (${name})`,
+    email: "Email address",
+    emailPlaceholder: "name@business.ie",
+    signIn: "Sign in",
+  },
+});
 
 const initial: SignInState = { error: null, email: "" };
 
@@ -24,15 +44,15 @@ export function LoginForm({ demo = null }: { demo?: DemoAccess | null }) {
       {demo && (
         // Public demo only (DEMO_LOGIN_*): each row is a small form with the same sign-in action,
         // so the password check, the throttle and RLS apply exactly as for typed credentials.
-        <section aria-label="Demo-Zugang" className="animate-rise-in mt-8 rounded-[22px] bg-raised p-1.5 [animation-delay:120ms]">
+        <section aria-label={T.demoAccess} className="animate-rise-in mt-8 rounded-[22px] bg-raised p-1.5 [animation-delay:120ms]">
           <div className="flex items-center gap-2.5 px-2.5 pt-1.5 pb-2.5">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-fg">
               <KeyRound className="size-4" aria-hidden />
             </span>
             <span className="min-w-0 text-[13px] leading-tight">
-              <span className="block font-medium text-fg">Demo-Zugang</span>
+              <span className="block font-medium text-fg">{T.demoAccess}</span>
               <span className="block text-muted">
-                Passwort <span className="figures font-medium text-fg">{demo.password}</span>
+                {T.password} <span className="figures font-medium text-fg">{demo.password}</span>
               </span>
             </span>
           </div>
@@ -47,7 +67,7 @@ export function LoginForm({ demo = null }: { demo?: DemoAccess | null }) {
                     <button
                       type="submit"
                       disabled={pending}
-                      aria-label={`Demo als ${account.role} öffnen (${account.name})`}
+                      aria-label={T.openDemo(account.role, account.name)}
                       className="press group flex w-full items-center gap-3 rounded-[18px] bg-surface py-2.5 pr-2.5 pl-3 text-left shadow-card transition-colors hover:bg-hover disabled:cursor-default"
                     >
                       <Avatar name={account.name} size="lg" />
@@ -72,21 +92,21 @@ export function LoginForm({ demo = null }: { demo?: DemoAccess | null }) {
 
       <form action={action} onSubmit={() => setChosen(null)} className={cn("flex flex-col gap-4", demo ? "mt-6" : "mt-8")} noValidate>
         <label className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-medium text-fg">E-Mail-Adresse</span>
+          <span className="text-[13px] font-medium text-fg">{T.email}</span>
           <input
             name="email"
             type="email"
             autoComplete="username"
             required
             defaultValue={state.email}
-            placeholder="name@betrieb.de"
+            placeholder={T.emailPlaceholder}
             className={cn(inputClasses, "h-11")}
           />
         </label>
         {/* Label outside the field box: the eye button must not become part of the field's name. */}
         <div className="flex flex-col gap-1.5">
           <label htmlFor="login-password" className="text-[13px] font-medium text-fg">
-            Passwort
+            {T.password}
           </label>
           <PasswordInput id="login-password" name="password" autoComplete="current-password" required className="h-11" />
         </div>
@@ -109,7 +129,7 @@ export function LoginForm({ demo = null }: { demo?: DemoAccess | null }) {
         </AnimatePresence>
 
         <Button type="submit" variant="primary" size="lg" pending={pending && chosen === null} disabled={pending} className="mt-2 w-full">
-          Anmelden
+          {T.signIn}
         </Button>
       </form>
     </MotionProvider>

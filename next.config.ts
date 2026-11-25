@@ -31,6 +31,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // One language per build (src/lib/i18n.ts). Inlined into server and browser code, so it cannot
+  // change at run time or per request. Anything but "en" means German.
+  env: { APP_LOCALE: process.env.APP_LOCALE === "en" ? "en" : "de" },
+  // Local English preview and its browser tests build into .next-en (e2e/en.mjs), so a German and an
+  // English build can sit side by side. Hosting builds use the default.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   cacheComponents: true,
   partialPrefetching: true,
   // A page visited in this tab is reused for five minutes when the user comes back, instead of being

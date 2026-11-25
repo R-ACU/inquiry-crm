@@ -2,8 +2,14 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { loadContacts } from "@/lib/data/views";
 import { ContactsView } from "@/components/contacts-table";
+import { pick } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Kontakte" };
+const T = pick({
+  de: { title: "Kontakte", loading: "Kontakte werden geladen" },
+  en: { title: "Contacts", loading: "Loading contacts" },
+});
+
+export const metadata: Metadata = { title: T.title };
 
 export default function ContactsPage() {
   return (
@@ -15,7 +21,7 @@ export default function ContactsPage() {
 
 function ContactsSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Kontakte werden geladen" className="loading-delayed">
+    <div aria-busy="true" aria-label={T.loading} className="loading-delayed">
       <div className="skeleton h-8 w-36" />
       <div className="skeleton mt-3 h-4 w-72 max-w-full" />
       <div className="mt-8 flex flex-col gap-2">

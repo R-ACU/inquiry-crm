@@ -4,6 +4,80 @@ import type { Json } from "@/lib/supabase/database.types";
 import { isInquiryStatus, SOURCE_LABELS, STATUS_LABELS } from "@/lib/domain/status";
 import { formatTimestamp } from "@/lib/domain/time";
 import { Avatar } from "@/components/ui/avatar";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    you: "Du",
+    someone: "Jemand",
+    unknown: "unbekannt",
+    toYou: "dir",
+    toSomeone: "jemandem",
+    formerMember: "Ehemaliges Mitglied",
+    empty: "Noch kein Verlauf.",
+    createdBy: (who: ReactNode) => <>{who} hat die Anfrage angelegt</>,
+    created: "Anfrage angelegt",
+    receivedVia: (source: ReactNode) => <>Anfrage über {source} eingegangen</>,
+    statusChanged: (who: ReactNode, you: boolean, from: string, to: ReactNode) => (
+      <>
+        {who} {you ? "hast" : "hat"} den Stand von {from} auf {to} gesetzt
+      </>
+    ),
+    assigned: (who: ReactNode, you: boolean, target: ReactNode) => (
+      <>
+        {who} {you ? "hast" : "hat"} die Anfrage {target} zugewiesen
+      </>
+    ),
+    unassigned: (who: ReactNode, you: boolean) => (
+      <>
+        {who} {you ? "hast" : "hat"} die Zuweisung entfernt
+      </>
+    ),
+    draftAccepted: (who: ReactNode, you: boolean) => (
+      <>
+        {who} {you ? "hast" : "hat"} einen KI-Entwurf als Notiz übernommen
+      </>
+    ),
+    draftDiscarded: (who: ReactNode, you: boolean) => (
+      <>
+        {who} {you ? "hast" : "hat"} einen KI-Entwurf verworfen
+      </>
+    ),
+    changed: (who: ReactNode, you: boolean) => (
+      <>
+        {who} {you ? "hast" : "hat"} Angaben geändert
+      </>
+    ),
+  },
+  en: {
+    you: "You",
+    someone: "Someone",
+    unknown: "unknown",
+    toYou: "you",
+    toSomeone: "someone",
+    formerMember: "Former member",
+    empty: "No history yet.",
+    createdBy: (who: ReactNode) => <>{who} created the inquiry</>,
+    created: "Inquiry created",
+    receivedVia: (source: ReactNode) => <>Inquiry received via {source}</>,
+    statusChanged: (who: ReactNode, _you: boolean, from: string, to: ReactNode) => (
+      <>
+        {who} moved it from {from} to {to}
+      </>
+    ),
+    assigned: (who: ReactNode, _you: boolean, target: ReactNode) => (
+      <>
+        {who} assigned the inquiry to {target}
+      </>
+    ),
+    unassigned: (who: ReactNode) => <>{who} removed the assignment</>,
+    draftAccepted: (who: ReactNode) => <>{who} saved an AI draft as a note</>,
+    draftDiscarded: (who: ReactNode) => <>{who} discarded an AI draft</>,
+    changed: (who: ReactNode) => <>{who} changed details</>,
+  },
+});
+
+const strong = (text: string) => <span className="text-fg">{text}</span>;
 
 interface Note {
   id: string;
@@ -31,8 +105,9 @@ function detail(details: Json, key: string): string | null {
 }
 
 function describe(event: HistoryEvent, names: Record<string, string>, viewerId: string): { icon: ReactNode; text: ReactNode } {
-  const actor = event.actor ? (event.actor.id === viewerId ? "Du" : event.actor.full_name) : null;
-  const strong = (text: string) => <span className="text-fg">{text}</span>;
+  const actor = event.actor ? (event.actor.id === viewerId ? T.you : event.actor.full_name) : null;
+  const you = actor === T.you;
+  const who = actor ? strong(actor) : T.someone;
   const iconClass = "size-3.5";
 
   switch (event.kind) {
@@ -43,61 +118,43 @@ function describe(event: HistoryEvent, names: Record<string, string>, viewerId: 
         icon: <CircleDot className={iconClass} aria-hidden />,
         text:
           source === "manual" || !label ? (
-            <>{actor ? <>{strong(actor)} hat die Anfrage angelegt</> : "Anfrage angelegt"}</>
+            <>{actor ? T.createdBy(strong(actor)) : T.created}</>
           ) : (
-            <>Anfrage über {strong(label)} eingegangen</>
+            T.receivedVia(strong(label))
           ),
       };
     }
     case "status_changed": {
       const from = detail(event.details, "from");
       const to = detail(event.details, "to");
-      const label = (s: string | null) => (s && isInquiryStatus(s) ? STATUS_LABELS[s] : "unbekannt");
+      const label = (s: string | null) => (s && isInquiryStatus(s) ? STATUS_LABELS[s] : T.unknown);
       return {
         icon: <ArrowRightLeft className={iconClass} aria-hidden />,
-        text: (
-          <>
-            {actor ? strong(actor) : "Jemand"} {actor === "Du" ? "hast" : "hat"} den Stand von {label(from)} auf {strong(label(to))} gesetzt
-          </>
-        ),
+        text: T.statusChanged(who, you, label(from), strong(label(to))),
       };
     }
     case "assigned": {
       const to = detail(event.details, "to");
-      const target = to ? (to === viewerId ? "dir" : names[to] ?? "jemandem") : null;
+      const target = to ? (to === viewerId ? T.toYou : names[to] ?? T.toSomeone) : null;
       return {
         icon: <UserRoundCheck className={iconClass} aria-hidden />,
-        text: target ? (
-          <>
-            {actor ? strong(actor) : "Jemand"} {actor === "Du" ? "hast" : "hat"} die Anfrage {strong(target)} zugewiesen
-          </>
-        ) : (
-          <>{actor ? strong(actor) : "Jemand"} {actor === "Du" ? "hast" : "hat"} die Zuweisung entfernt</>
-        ),
+        text: target ? T.assigned(who, you, strong(target)) : T.unassigned(who, you),
       };
     }
     case "ai_draft_accepted":
       return {
         icon: <NotebookPen className={iconClass} aria-hidden />,
-        text: (
-          <>
-            {actor ? strong(actor) : "Jemand"} {actor === "Du" ? "hast" : "hat"} einen KI-Entwurf als Notiz übernommen
-          </>
-        ),
+        text: T.draftAccepted(who, you),
       };
     case "ai_draft_discarded":
       return {
         icon: <X className={iconClass} aria-hidden />,
-        text: (
-          <>
-            {actor ? strong(actor) : "Jemand"} {actor === "Du" ? "hast" : "hat"} einen KI-Entwurf verworfen
-          </>
-        ),
+        text: T.draftDiscarded(who, you),
       };
     default:
       return {
         icon: <FilePenLine className={iconClass} aria-hidden />,
-        text: <>{actor ? strong(actor) : "Jemand"} {actor === "Du" ? "hast" : "hat"} Angaben geändert</>,
+        text: T.changed(who, you),
       };
   }
 }
@@ -119,7 +176,7 @@ export function Timeline({
   ].sort((a, b) => b.at.localeCompare(a.at));
 
   if (entries.length === 0) {
-    return <p className="mt-6 text-sm text-muted">Noch kein Verlauf.</p>;
+    return <p className="mt-6 text-sm text-muted">{T.empty}</p>;
   }
 
   return (
@@ -131,7 +188,7 @@ export function Timeline({
             <div className="min-w-0 flex-1">
               <p className="text-[13px] text-muted">
                 <span className="text-fg">
-                  {entry.note.author ? (entry.note.author.id === viewerId ? "Du" : entry.note.author.full_name) : "Ehemaliges Mitglied"}
+                  {entry.note.author ? (entry.note.author.id === viewerId ? T.you : entry.note.author.full_name) : T.formerMember}
                 </span>
                 <span className="figures ml-2 text-xs text-muted">{formatTimestamp(entry.note.created_at)}</span>
               </p>

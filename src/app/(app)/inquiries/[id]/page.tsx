@@ -36,15 +36,81 @@ import { DraftPanel } from "@/components/inquiry/draft-panel";
 import { Timeline } from "@/components/inquiry/timeline";
 import { NoteComposer } from "@/components/inquiry/note-composer";
 import { cn } from "@/lib/cn";
+import { pick } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Anfrage" };
+const T = pick({
+  de: {
+    title: "Anfrage",
+    allInquiries: "Alle Anfragen",
+    date: "Termin",
+    time: "Uhrzeit",
+    guests: "Gäste",
+    budget: "Budget",
+    place: "Ort",
+    occasion: "Anlass",
+    received: "Eingang",
+    open: "offen",
+    persons: (n: number) => `${n} Personen`,
+    notClassified: "noch nicht eingeordnet",
+    receivedVia: (when: string, source: string) => `${when} über ${source}`,
+    calendarTitle: "Lädt eine Kalenderdatei (.ics), die jede Kalender-App öffnet",
+    toCalendar: "In den Kalender",
+    calendarNeedsDate: "Erst möglich, wenn ein Termin feststeht",
+    state: "Stand der Anfrage",
+    message: "Nachricht",
+    noMessage: "Keine Nachricht mitgeschickt.",
+    history: "Verlauf",
+    historyDescription: "Notizen des Teams und jede Änderung, neueste zuerst.",
+    contact: "Kontakt",
+    unconfirmedTitle: "Per E-Mail zugeordnet, nicht bestätigt",
+    unconfirmedDiffers: "Die Anfrage kam mit anderen Angaben. Vor dem Antworten prüfen, ob sie wirklich von diesem Kontakt stammt.",
+    unconfirmedMatches: "Die Angaben stimmen mit dem Kontakt überein. Die E-Mail-Adresse selbst ist nicht bestätigt.",
+    assignee: "Zuständig",
+    unassigned: "Nicht zugewiesen",
+    others: "Weitere Anfragen dieses Kontakts",
+    loading: "Anfrage wird geladen",
+  },
+  en: {
+    title: "Inquiry",
+    allInquiries: "All inquiries",
+    date: "Event date",
+    time: "Time",
+    guests: "Guests",
+    budget: "Budget",
+    place: "Venue",
+    occasion: "Occasion",
+    received: "Received",
+    open: "open",
+    persons: (n: number) => `${n} guests`,
+    notClassified: "not classified yet",
+    receivedVia: (when: string, source: string) => `${when} via ${source}`,
+    calendarTitle: "Downloads a calendar file (.ics) that any calendar app opens",
+    toCalendar: "Add to calendar",
+    calendarNeedsDate: "Only possible once an event date is set",
+    state: "Inquiry status",
+    message: "Message",
+    noMessage: "No message was sent.",
+    history: "History",
+    historyDescription: "Team notes and every change, newest first.",
+    contact: "Contact",
+    unconfirmedTitle: "Matched by email, not confirmed",
+    unconfirmedDiffers: "The inquiry came with different details. Check that it really comes from this contact before replying.",
+    unconfirmedMatches: "The details match the contact. The email address itself is not confirmed.",
+    assignee: "Assigned to",
+    unassigned: "Not assigned",
+    others: "Other inquiries from this contact",
+    loading: "Loading inquiry",
+  },
+});
+
+export const metadata: Metadata = { title: T.title };
 
 export default function InquiryPage({ params }: PageProps<"/inquiries/[id]">) {
   return (
     <div className="mx-auto max-w-[1360px]">
       <Link href="/inquiries" className={buttonClasses("ghost", "sm", "-ml-3 rounded-full max-md:h-10")}>
         <ArrowLeft aria-hidden />
-        Alle Anfragen
+        {T.allInquiries}
       </Link>
       <Suspense fallback={<DetailSkeleton />}>
         <InquiryDetail params={params} />
@@ -73,13 +139,13 @@ async function InquiryDetail({ params }: { params: PageProps<"/inquiries/[id]">[
 
   const days = inquiry.event_date ? daysUntil(inquiry.event_date) : null;
   const facts: { label: string; value: string; icon: LucideIcon; wide?: boolean }[] = [
-    { label: "Termin", value: formatEventDate(inquiry.event_date), icon: CalendarDays },
-    { label: "Uhrzeit", value: formatTimeRange(inquiry.start_time, inquiry.end_time) ?? "offen", icon: Clock },
-    { label: "Gäste", value: inquiry.guest_count ? `${inquiry.guest_count} Personen` : "offen", icon: UsersRound },
-    { label: "Budget", value: formatEuro(inquiry.budget_cents), icon: Wallet },
-    { label: "Ort", value: inquiry.location ?? "offen", icon: MapPin },
-    { label: "Anlass", value: inquiry.event_type ? EVENT_TYPE_LABELS[inquiry.event_type] : "noch nicht eingeordnet", icon: Tag },
-    { label: "Eingang", value: `${formatTimestamp(inquiry.created_at)} über ${SOURCE_LABELS[inquiry.source]}`, icon: Inbox, wide: true },
+    { label: T.date, value: formatEventDate(inquiry.event_date), icon: CalendarDays },
+    { label: T.time, value: formatTimeRange(inquiry.start_time, inquiry.end_time) ?? T.open, icon: Clock },
+    { label: T.guests, value: inquiry.guest_count ? T.persons(inquiry.guest_count) : T.open, icon: UsersRound },
+    { label: T.budget, value: formatEuro(inquiry.budget_cents), icon: Wallet },
+    { label: T.place, value: inquiry.location ?? T.open, icon: MapPin },
+    { label: T.occasion, value: inquiry.event_type ? EVENT_TYPE_LABELS[inquiry.event_type] : T.notClassified, icon: Tag },
+    { label: T.received, value: T.receivedVia(formatTimestamp(inquiry.created_at), SOURCE_LABELS[inquiry.source]), icon: Inbox, wide: true },
   ];
   const unconfirmed =
     inquiry.matched_existing_contact && inquiry.contact ? unconfirmedIntakeDetails(inquiry.submitted_contact, inquiry.contact) : null;
@@ -110,16 +176,16 @@ async function InquiryDetail({ params }: { params: PageProps<"/inquiries/[id]">[
           <a
             href={`/api/inquiries/${inquiry.id}/calendar`}
             download
-            title="Lädt eine Kalenderdatei (.ics), die jede Kalender-App öffnet"
+            title={T.calendarTitle}
             className={buttonClasses("secondary", "md", "rounded-full max-sm:h-10 max-sm:w-full")}
           >
             <CalendarPlus className="text-accent-fg" aria-hidden />
-            In den Kalender
+            {T.toCalendar}
           </a>
         ) : (
-          <span className={buttonClasses("secondary", "md", "cursor-not-allowed rounded-full opacity-60 max-sm:h-10 max-sm:w-full")} title="Erst möglich, wenn ein Termin feststeht">
+          <span className={buttonClasses("secondary", "md", "cursor-not-allowed rounded-full opacity-60 max-sm:h-10 max-sm:w-full")} title={T.calendarNeedsDate}>
             <CalendarPlus aria-hidden />
-            In den Kalender
+            {T.toCalendar}
           </span>
         )}
       </header>
@@ -128,12 +194,12 @@ async function InquiryDetail({ params }: { params: PageProps<"/inquiries/[id]">[
         <div className="flex min-w-0 flex-col gap-5">
           <Panel>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[13px] font-medium text-muted">Stand der Anfrage</p>
+              <p className="text-[13px] font-medium text-muted">{T.state}</p>
               <StatusControl inquiryId={inquiry.id} status={inquiry.status} />
             </div>
           </Panel>
 
-          <Panel title="Anfrage" id="facts-heading">
+          <Panel title={T.title} id="facts-heading">
             <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {facts.map((fact) => (
                 <div key={fact.label} className={cn("flex items-start gap-3 rounded-2xl bg-raised px-3.5 py-3", fact.wide && "sm:col-span-2 xl:col-span-3")}>
@@ -148,8 +214,8 @@ async function InquiryDetail({ params }: { params: PageProps<"/inquiries/[id]">[
               ))}
             </dl>
             <div className="mt-5">
-              <p className="text-xs font-medium text-muted">Nachricht</p>
-              <p className="mt-2 max-w-prose text-[15px] leading-relaxed whitespace-pre-wrap">{inquiry.message || "Keine Nachricht mitgeschickt."}</p>
+              <p className="text-xs font-medium text-muted">{T.message}</p>
+              <p className="mt-2 max-w-prose text-[15px] leading-relaxed whitespace-pre-wrap">{inquiry.message || T.noMessage}</p>
             </div>
           </Panel>
 
@@ -170,7 +236,7 @@ async function InquiryDetail({ params }: { params: PageProps<"/inquiries/[id]">[
             }
           />
 
-          <Panel title="Verlauf" id="history-heading" description="Notizen des Teams und jede Änderung, neueste zuerst.">
+          <Panel title={T.history} id="history-heading" description={T.historyDescription}>
             <NoteComposer inquiryId={inquiry.id} />
             <Timeline
               notes={timeline.notes}
@@ -182,7 +248,7 @@ async function InquiryDetail({ params }: { params: PageProps<"/inquiries/[id]">[
         </div>
 
         <aside className="flex flex-col gap-5">
-          <Panel title="Kontakt" id="contact-heading">
+          <Panel title={T.contact} id="contact-heading">
             {inquiry.contact && (
               <>
                 <div className="flex items-center gap-3">
@@ -219,12 +285,12 @@ async function InquiryDetail({ params }: { params: PageProps<"/inquiries/[id]">[
                   <div role="note" className="mt-4 rounded-xl border border-st-quoted/30 bg-[color-mix(in_srgb,var(--color-st-quoted)_7%,var(--color-surface))] p-3.5">
                     <p className="flex items-center gap-2 text-[13px] font-medium text-fg">
                       <ShieldAlert className="size-4 shrink-0 text-st-quoted" aria-hidden />
-                      Per E-Mail zugeordnet, nicht bestätigt
+                      {T.unconfirmedTitle}
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-muted">
                       {unconfirmed.length > 0
-                        ? "Die Anfrage kam mit anderen Angaben. Vor dem Antworten prüfen, ob sie wirklich von diesem Kontakt stammt."
-                        : "Die Angaben stimmen mit dem Kontakt überein. Die E-Mail-Adresse selbst ist nicht bestätigt."}
+                        ? T.unconfirmedDiffers
+                        : T.unconfirmedMatches}
                     </p>
                     {unconfirmed.length > 0 && (
                       <dl className="mt-2.5 flex flex-col gap-1 text-xs">
@@ -242,7 +308,7 @@ async function InquiryDetail({ params }: { params: PageProps<"/inquiries/[id]">[
             )}
           </Panel>
 
-          <Panel title="Zuständig" id="assignee-heading">
+          <Panel title={T.assignee} id="assignee-heading">
             {member.role === "owner" ? (
               <AssigneeControl
                 inquiryId={inquiry.id}
@@ -252,13 +318,13 @@ async function InquiryDetail({ params }: { params: PageProps<"/inquiries/[id]">[
             ) : (
               <p className="flex items-center gap-2.5 text-sm">
                 {inquiry.assignee ? <Avatar name={inquiry.assignee.full_name} size="sm" /> : <EmptyAvatar size="sm" />}
-                {inquiry.assignee?.full_name ?? "Nicht zugewiesen"}
+                {inquiry.assignee?.full_name ?? T.unassigned}
               </p>
             )}
           </Panel>
 
           {others.length > 0 && (
-            <Panel title="Weitere Anfragen dieses Kontakts" id="others-heading">
+            <Panel title={T.others} id="others-heading">
               <ul className="-mx-2 flex flex-col gap-1">
                 {others.map((other) => (
                   <li key={other.id}>
@@ -283,7 +349,7 @@ async function InquiryDetail({ params }: { params: PageProps<"/inquiries/[id]">[
 
 function DetailSkeleton() {
   return (
-    <div className="mt-3" aria-busy="true" aria-label="Anfrage wird geladen">
+    <div className="mt-3" aria-busy="true" aria-label={T.loading}>
       <div className="flex items-center gap-4">
         <div className="skeleton size-16 rounded-2xl" />
         <div className="flex-1">

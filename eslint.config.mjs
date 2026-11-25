@@ -9,6 +9,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // The local English build (e2e/en.mjs).
+    ".next-en/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

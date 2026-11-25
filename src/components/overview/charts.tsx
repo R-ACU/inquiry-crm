@@ -25,6 +25,24 @@ import { changeAsPercent, type Delta } from "@/lib/domain/overview";
 import { motionReduced } from "@/components/theme/theme-client";
 import { useEntrance } from "@/components/ui/entrance";
 import { cn } from "@/lib/cn";
+import { INTL_LOCALE, pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    percent: (text: string) => `${text} %`,
+    newRow: (n: number) => `Neu (${n})`,
+    quotedRow: (n: number) => `Angebot (${n})`,
+    pipelineValue: "Pipeline-Wert",
+    inquiries: "Anfragen",
+  },
+  en: {
+    percent: (text: string) => `${text}%`,
+    newRow: (n: number) => `New (${n})`,
+    quotedRow: (n: number) => `Quoted (${n})`,
+    pipelineValue: "Pipeline value",
+    inquiries: "Inquiries",
+  },
+});
 
 /*
  * Charts of the overview, drawn with Recharts in one shape language: bars
@@ -241,8 +259,8 @@ function BarHoverCard({ hover, estimate, children }: { hover: BarHover | null; e
 /* Change chip                                                          */
 /* ------------------------------------------------------------------ */
 
-const percent = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0, signDisplay: "exceptZero" });
-const count = new Intl.NumberFormat("de-DE");
+const percent = new Intl.NumberFormat(INTL_LOCALE, { maximumFractionDigits: 0, signDisplay: "exceptZero" });
+const count = new Intl.NumberFormat(INTL_LOCALE);
 
 /**
  * Up is green, down is a quiet grey: red stays reserved for errors. Counts
@@ -269,7 +287,7 @@ export function DeltaChip({
     dir === "flat"
       ? "±0"
       : formatAmount && changeAsPercent(delta)
-        ? `${percent.format(ratio! * 100)} %`
+        ? T.percent(percent.format(ratio! * 100))
         : `${sign}${formatAmount ? formatAmount(Math.abs(change)) : count.format(Math.abs(change))}`;
   const Icon = dir === "up" ? ArrowUpRight : dir === "down" ? ArrowDownRight : ArrowRight;
   return (
@@ -428,7 +446,7 @@ export function PipelineBars({ rows, formatValue, height = 250 }: { rows: Pipeli
         <BarHoverProbe rows={rows} value={(r) => r.total} maxBarSize={barSize} categoryGap={0.22} minPointSize={14} onChange={setHover} />
         <Bar
           dataKey="total"
-          name="Pipeline-Wert"
+          name={T.pipelineValue}
           maxBarSize={barSize}
           minPointSize={14}
           background={{ fill: `url(#${hatchId})`, radius: 999 }}
@@ -443,9 +461,9 @@ export function PipelineBars({ rows, formatValue, height = 250 }: { rows: Pipeli
           <TooltipCard
             title={row.title}
             rows={[
-              { label: `Neu (${row.newCount})`, value: formatValue(row.newValue), color: "var(--chart-2)" },
-              { label: `Angebot (${row.quotedCount})`, value: formatValue(row.quotedValue), color: "var(--accent)" },
-              { label: "Pipeline-Wert", value: formatValue(row.total), strong: true },
+              { label: T.newRow(row.newCount), value: formatValue(row.newValue), color: "var(--chart-2)" },
+              { label: T.quotedRow(row.quotedCount), value: formatValue(row.quotedValue), color: "var(--accent)" },
+              { label: T.pipelineValue, value: formatValue(row.total), strong: true },
             ]}
           />
         )}
@@ -541,7 +559,7 @@ export function WeeklyBars({ rows, height = 240 }: { rows: WeekRow[]; height?: n
           <TooltipCard
             title={row.title}
             subtitle={row.subtitle}
-            rows={[{ label: "Anfragen", value: String(row.count), color: row.inPeriod ? "var(--accent)" : "var(--chart-2)" }]}
+            rows={[{ label: T.inquiries, value: String(row.count), color: row.inPeriod ? "var(--accent)" : "var(--chart-2)" }]}
           />
         )}
       </BarHoverCard>

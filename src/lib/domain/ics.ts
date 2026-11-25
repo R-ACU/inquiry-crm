@@ -1,6 +1,26 @@
 import { formatEuro } from "./money";
 import { zonedTimeToUtc } from "./time";
 import type { InquiryStatus } from "./status";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    prodId: "PRODID:-//Inquiry CRM//Anfragen//DE",
+    contact: "Kontakt",
+    guests: "Gäste",
+    budget: "Budget",
+    inquiry: "Anfrage",
+    fileFallback: "termin",
+  },
+  en: {
+    prodId: "PRODID:-//Inquiry CRM//Inquiries//EN",
+    contact: "Contact",
+    guests: "Guests",
+    budget: "Budget",
+    inquiry: "Inquiry",
+    fileFallback: "event",
+  },
+});
 
 export interface CalendarInquiry {
   id: string;
@@ -69,7 +89,7 @@ function nextDay(isoDate: string): string {
 
 /**
  * Builds an iCalendar file for the event of one inquiry. Times are stored
- * as wall-clock times in Europe/Berlin and exported in UTC, so every
+ * as wall-clock times in the business time zone and exported in UTC, so every
  * calendar app places the event correctly without a VTIMEZONE block.
  * Without a start time the event is exported as an all-day event.
  */
@@ -77,10 +97,10 @@ export function buildInquiryIcs(inquiry: CalendarInquiry, options: { now: Date; 
   if (!inquiry.event_date) throw new MissingEventDateError();
 
   const description = [
-    `Kontakt: ${inquiry.contact_name}`,
-    inquiry.guest_count ? `Gäste: ${inquiry.guest_count}` : null,
-    `Budget: ${formatEuro(inquiry.budget_cents)}`,
-    `Anfrage: ${options.appUrl.replace(/\/$/, "")}/inquiries/${inquiry.id}`,
+    `${T.contact}: ${inquiry.contact_name}`,
+    inquiry.guest_count ? `${T.guests}: ${inquiry.guest_count}` : null,
+    `${T.budget}: ${formatEuro(inquiry.budget_cents)}`,
+    `${T.inquiry}: ${options.appUrl.replace(/\/$/, "")}/inquiries/${inquiry.id}`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -88,7 +108,7 @@ export function buildInquiryIcs(inquiry: CalendarInquiry, options: { now: Date; 
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Inquiry CRM//Anfragen//DE",
+    T.prodId,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
@@ -127,5 +147,5 @@ export function icsFileName(title: string, eventDate: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 48)
     .replace(/-+$/g, "");
-  return `${eventDate}-${slug || "termin"}.ics`;
+  return `${eventDate}-${slug || T.fileFallback}.ics`;
 }

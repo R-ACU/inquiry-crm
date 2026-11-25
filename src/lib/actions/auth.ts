@@ -5,6 +5,22 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseAnonClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { clientAddressFrom } from "@/lib/http";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    throttled: "Zu viele Anmeldeversuche. Bitte in 15 Minuten erneut versuchen.",
+    missing: "Bitte E-Mail-Adresse und Passwort eingeben.",
+    unavailable: "Die Anmeldung ist gerade nicht möglich. Bitte später erneut versuchen.",
+    wrong: "E-Mail-Adresse oder Passwort ist falsch.",
+  },
+  en: {
+    throttled: "Too many sign-in attempts. Please try again in 15 minutes.",
+    missing: "Please enter your email address and password.",
+    unavailable: "Signing in is not possible right now. Please try again later.",
+    wrong: "Email address or password is incorrect.",
+  },
+});
 
 export interface SignInState {
   error: string | null;
@@ -15,8 +31,6 @@ const credentials = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email()),
   password: z.string().min(1).max(200),
 });
-
-const THROTTLED = "Zu viele Anmeldeversuche. Bitte in 15 Minuten erneut versuchen.";
 
 /**
  * Sign-in runs on the server, so Supabase Auth sees the server's address for
@@ -29,7 +43,7 @@ const THROTTLED = "Zu viele Anmeldeversuche. Bitte in 15 Minuten erneut versuche
 export async function signIn(_previous: SignInState, formData: FormData): Promise<SignInState> {
   const email = String(formData.get("email") ?? "");
   const parsed = credentials.safeParse({ email, password: formData.get("password") });
-  if (!parsed.success) return { error: "Bitte E-Mail-Adresse und Passwort eingeben.", email };
+  if (!parsed.success) return { error: T.missing, email };
 
   const client = clientAddressFrom(await headers());
   const throttle = createSupabaseAnonClient();
@@ -37,16 +51,16 @@ export async function signIn(_previous: SignInState, formData: FormData): Promis
   if (allowed.error) {
     // Fail closed: without the throttle there is no sign-in.
     console.error("login throttle unavailable", { code: allowed.error.code });
-    return { error: "Die Anmeldung ist gerade nicht möglich. Bitte später erneut versuchen.", email };
+    return { error: T.unavailable, email };
   }
-  if (allowed.data !== true) return { error: THROTTLED, email };
+  if (allowed.data !== true) return { error: T.throttled, email };
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
     await throttle.rpc("record_login_failure", { p_email: parsed.data.email, p_client: client });
     // One message for unknown e-mail and wrong password, so accounts cannot be enumerated.
-    return { error: "E-Mail-Adresse oder Passwort ist falsch.", email };
+    return { error: T.wrong, email };
   }
   redirect("/");
 }

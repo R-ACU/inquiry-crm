@@ -11,6 +11,18 @@ import { StatusDot } from "@/components/status";
 import { SPRING } from "@/components/ui/segmented";
 import { useToast } from "@/components/shell/providers";
 import { cn } from "@/lib/cn";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    set: (label: string) => `Stand auf ${label} gesetzt.`,
+    group: "Stand der Anfrage",
+  },
+  en: {
+    set: (label: string) => `Status set to ${label}.`,
+    group: "Inquiry status",
+  },
+});
 
 /** Pill control for the pipeline stage. The thumb glides; arrow keys move between stages. */
 export function StatusControl({ inquiryId, status }: { inquiryId: string; status: InquiryStatus }) {
@@ -29,7 +41,7 @@ export function StatusControl({ inquiryId, status }: { inquiryId: string; status
         toast("error", result.error);
         return;
       }
-      toast("success", `Stand auf ${STATUS_LABELS[next]} gesetzt.`);
+      toast("success", T.set(STATUS_LABELS[next]));
       await refreshViews(queryClient);
       router.refresh();
     });
@@ -38,7 +50,7 @@ export function StatusControl({ inquiryId, status }: { inquiryId: string; status
   return (
     <div
       role="radiogroup"
-      aria-label="Stand der Anfrage"
+      aria-label={T.group}
       aria-busy={pending || undefined}
       className="grid w-full grid-cols-4 gap-1 rounded-full bg-track p-1 sm:inline-flex sm:w-auto"
       onKeyDown={(event) => {

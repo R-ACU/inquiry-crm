@@ -5,6 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CircleAlert, CircleCheck, X } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MotionProvider } from "@/components/theme/motion-provider";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: { dismiss: "Hinweis schließen" },
+  en: { dismiss: "Dismiss notice" },
+});
 
 interface Toast {
   id: number;
@@ -79,7 +85,7 @@ export function Providers({ member, children }: { member: ShellMember; children:
               <p className="flex-1 text-fg">{toast.message}</p>
               <button
                 type="button"
-                aria-label="Hinweis schließen"
+                aria-label={T.dismiss}
                 onClick={() => setToasts((list) => list.filter((t) => t.id !== toast.id))}
                 className="press rounded-full p-0.5 text-faint hover:bg-hover hover:text-fg"
               >

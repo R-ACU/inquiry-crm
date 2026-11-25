@@ -2,6 +2,12 @@ import { z } from "zod";
 import { EVENT_TYPES } from "./status";
 import { euroToCents } from "./money";
 import { isValidIsoDate, isValidTime, timeToMinutes } from "./time";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: { company: "Firma", phone: "Telefon" },
+  en: { company: "Company", phone: "Phone" },
+});
 
 /** Largest request body the intake endpoint reads, in bytes. */
 export const MAX_INTAKE_BODY_BYTES = 16 * 1024;
@@ -108,8 +114,8 @@ export function unconfirmedIntakeDetails(submitted: unknown, contact: KnownConta
   const name = text(typed.name);
   if (name && !sameText(name, contact.full_name)) details.push({ label: "Name", value: name });
   const company = text(typed.company);
-  if (company && !sameText(company, contact.company)) details.push({ label: "Firma", value: company });
+  if (company && !sameText(company, contact.company)) details.push({ label: T.company, value: company });
   const phone = text(typed.phone);
-  if (phone && digits(phone) !== digits(contact.phone)) details.push({ label: "Telefon", value: phone });
+  if (phone && digits(phone) !== digits(contact.phone)) details.push({ label: T.phone, value: phone });
   return details;
 }

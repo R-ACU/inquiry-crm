@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { SEED_FILES } from "../support/pg-harness";
 
 /**
  * `supabase config push` sends supabase/config.toml to the hosted project. On hosted Supabase,
@@ -33,6 +34,11 @@ describe("supabase/config.toml auth settings", () => {
 
   it("keeps the e-mail provider on, so the staff can sign in with e-mail and password", () => {
     expect(section(toml, "auth.email").enable_signup).toBe("true");
+  });
+
+  it("seeds both demo workspaces in the order the local stand-in and the tests use", () => {
+    const paths = JSON.parse(section(toml, "db.seed").sql_paths) as string[];
+    expect(paths).toEqual(SEED_FILES.map((f) => `./${f}`));
   });
 
   it("asks for long passwords with mixed characters", () => {

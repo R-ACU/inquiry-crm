@@ -1,5 +1,12 @@
 import { ChefHat } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { pick } from "@/lib/i18n";
+
+/** The demo's business name and what it does, in the language of this build. */
+export const BRAND = pick({
+  de: { name: "Lindgrün", tagline: "Catering und Events" },
+  en: { name: "Larkspur", tagline: "Catering & Events" },
+});
 
 /** The demo's own invented business. Company themes change its accent, never its name or mark. */
 export function BrandMark({ onGlass = false, className }: { onGlass?: boolean; className?: string }) {
@@ -21,8 +28,8 @@ export function Brand({ onGlass = false, subtitle = true }: { onGlass?: boolean;
     <div className="flex items-center gap-2.5">
       <BrandMark onGlass={onGlass} />
       <span className="leading-tight">
-        <span className={cn("heading block text-[15px]", onGlass && "text-glass-fg")}>Lindgrün</span>
-        {subtitle && <span className={cn("block text-xs", onGlass ? "text-glass-muted" : "text-faint")}>Catering und Events</span>}
+        <span className={cn("heading block text-[15px]", onGlass && "text-glass-fg")}>{BRAND.name}</span>
+        {subtitle && <span className={cn("block text-xs", onGlass ? "text-glass-muted" : "text-faint")}>{BRAND.tagline}</span>}
       </span>
     </div>
   );

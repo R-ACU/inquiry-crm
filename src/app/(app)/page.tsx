@@ -2,8 +2,14 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { loadOverview } from "@/lib/data/views";
 import { OverviewView } from "@/components/overview/overview";
+import { pick } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Übersicht" };
+const T = pick({
+  de: { title: "Übersicht", loading: "Übersicht wird geladen" },
+  en: { title: "Overview", loading: "Loading overview" },
+});
+
+export const metadata: Metadata = { title: T.title };
 
 export default function OverviewPage() {
   return (
@@ -15,7 +21,7 @@ export default function OverviewPage() {
 
 function OverviewSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Übersicht wird geladen" className="loading-delayed flex flex-col gap-6 md:gap-7">
+    <div aria-busy="true" aria-label={T.loading} className="loading-delayed flex flex-col gap-6 md:gap-7">
       <div className="flex items-end justify-between gap-4">
         <div>
           <div className="skeleton h-8 w-44" />

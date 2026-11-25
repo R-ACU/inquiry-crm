@@ -1,4 +1,25 @@
-export const BUSINESS_TIME_ZONE = "Europe/Berlin";
+import { BUSINESS_TIME_ZONE, INTL_LOCALE, LOCALE, pick } from "@/lib/i18n";
+
+export { BUSINESS_TIME_ZONE };
+
+const T = pick({
+  de: {
+    noDate: "Datum offen",
+    range: (s: string, e: string) => `${s} bis ${e} Uhr`,
+    from: (s: string) => `ab ${s} Uhr`,
+    today: "heute",
+    yesterday: "gestern",
+    daysAgo: (n: number) => `vor ${n} Tagen`,
+  },
+  en: {
+    noDate: "Date open",
+    range: (s: string, e: string) => `${s} to ${e}`,
+    from: (s: string) => `from ${s}`,
+    today: "today",
+    yesterday: "yesterday",
+    daysAgo: (n: number) => `${n} days ago`,
+  },
+});
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME = /^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/;
@@ -54,17 +75,23 @@ export function zonedTimeToUtc(isoDate: string, time: string, timeZone = BUSINES
   return new Date(corrected);
 }
 
-const dateFormatter = new Intl.DateTimeFormat("de-DE", {
+/**
+ * English spells the month ("12 Dec"): readers in the US and in Europe put day
+ * and month in a different order, so "08/05" would be ambiguous.
+ */
+const NUMERIC_MONTH = LOCALE === "en" ? "short" : "2-digit";
+
+const dateFormatter = new Intl.DateTimeFormat(INTL_LOCALE, {
   timeZone: "UTC",
   weekday: "short",
   day: "2-digit",
-  month: "2-digit",
+  month: NUMERIC_MONTH,
   year: "numeric",
 });
 
-/** "2026-12-12" to "Sa., 12.12.2026". */
+/** "2026-12-12" to "Sa., 12.12.2026" (English: "Sat 12 Dec 2026"). */
 export function formatEventDate(isoDate: string | null): string {
-  if (!isoDate) return "Datum offen";
+  if (!isoDate) return T.noDate;
   const [y, m, d] = isoDate.split("-").map(Number);
   return dateFormatter.format(new Date(Date.UTC(y, m - 1, d)));
 }
@@ -72,13 +99,13 @@ export function formatEventDate(isoDate: string | null): string {
 export function formatTimeRange(start: string | null, end: string | null): string | null {
   if (!start) return null;
   const s = start.slice(0, 5);
-  return end ? `${s} bis ${end.slice(0, 5)} Uhr` : `ab ${s} Uhr`;
+  return end ? T.range(s, end.slice(0, 5)) : T.from(s);
 }
 
-const dateTimeFormatter = new Intl.DateTimeFormat("de-DE", {
+const dateTimeFormatter = new Intl.DateTimeFormat(INTL_LOCALE, {
   timeZone: BUSINESS_TIME_ZONE,
   day: "2-digit",
-  month: "2-digit",
+  month: NUMERIC_MONTH,
   year: "numeric",
   hour: "2-digit",
   minute: "2-digit",
@@ -95,10 +122,10 @@ export function formatRelativeDay(iso: string, now: Date = new Date()): string {
   const diffDays = Math.round(
     (Date.parse(day(now)) - Date.parse(day(new Date(iso)))) / 86_400_000,
   );
-  if (diffDays <= 0) return "heute";
-  if (diffDays === 1) return "gestern";
-  if (diffDays < 7) return `vor ${diffDays} Tagen`;
-  return new Intl.DateTimeFormat("de-DE", { timeZone: BUSINESS_TIME_ZONE, day: "2-digit", month: "2-digit" }).format(
+  if (diffDays <= 0) return T.today;
+  if (diffDays === 1) return T.yesterday;
+  if (diffDays < 7) return T.daysAgo(diffDays);
+  return new Intl.DateTimeFormat(INTL_LOCALE, { timeZone: BUSINESS_TIME_ZONE, day: "2-digit", month: NUMERIC_MONTH }).format(
     new Date(iso),
   );
 }

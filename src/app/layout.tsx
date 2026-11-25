@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { DEFAULT_THEME, themeScript } from "@/lib/theme/themes";
+import { LOCALE, pick } from "@/lib/i18n";
 import { ThemeSync } from "@/components/theme/theme-client";
 import "./globals.css";
 
@@ -16,9 +17,20 @@ const allo = localFont({
   display: "swap",
 });
 
+const T = pick({
+  de: {
+    title: { default: "Lindgrün Anfragen", template: "%s | Lindgrün Anfragen" },
+    description: "Anfragen-CRM für einen Catering- und Eventbetrieb (Demo mit erfundenen Daten).",
+  },
+  en: {
+    title: { default: "Larkspur Inquiries", template: "%s | Larkspur Inquiries" },
+    description: "Inquiry CRM for a catering and events business (demo with invented data).",
+  },
+});
+
 export const metadata: Metadata = {
-  title: { default: "Lindgrün Anfragen", template: "%s | Lindgrün Anfragen" },
-  description: "Anfragen-CRM für einen Catering- und Eventbetrieb (Demo mit erfundenen Daten).",
+  title: T.title,
+  description: T.description,
   robots: { index: false, follow: false },
 };
 
@@ -32,7 +44,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="de" data-theme={DEFAULT_THEME} className={`${allo.variable} h-full`} suppressHydrationWarning>
+    <html lang={LOCALE} data-theme={DEFAULT_THEME} className={`${allo.variable} h-full`} suppressHydrationWarning>
       <head>
         {/* Constant script from a fixed list, see src/lib/theme/themes.ts. Runs before the first paint. */}
         <script dangerouslySetInnerHTML={{ __html: themeScript() }} />

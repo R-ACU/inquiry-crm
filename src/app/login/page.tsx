@@ -6,10 +6,44 @@ import { ThemeNote } from "@/components/theme/theme-client";
 import venue from "@/assets/login-venue.webp";
 import { LoginForm } from "./login-form";
 import { demoAccess } from "@/lib/demo-access";
+import { pick } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Anmelden" };
+const T = pick({
+  de: {
+    title: "Anmelden",
+    photoAlt: "Langer, heller Festsaal mit gedeckten Tafeln, Holzbalken und Lichterketten",
+    photoCredit: "Foto: Sweet Ice Cream Photography, CC0",
+    welcome: "Willkommen zurück",
+    intro: "Melde dich mit dem Zugang an, den du von deinem Betrieb bekommen hast.",
+    accessNote: "Zugänge legt die Inhaberin oder der Inhaber an. Passwort vergessen? Dort hilft man dir weiter.",
+    footer: "Demo mit erfundenen Daten. Lindgrün ist kein echter Betrieb.",
+    sampleTitle: "Sommerfest im Innenhof",
+    sampleGuests: "120 Gäste",
+    sampleQuote: "Angebot bis Freitag",
+    sampleMonth: "Jun",
+    headline: "Jede Anfrage im Blick, vom ersten Kontakt bis zur Zusage.",
+    subline: "Termine, Gästezahl und Budget an einem Ort. Der Assistent schreibt Entwürfe, entscheiden tut ein Mensch.",
+  },
+  en: {
+    title: "Sign in",
+    photoAlt: "Long, bright banquet hall with laid tables, wooden beams and fairy lights",
+    photoCredit: "Photo: Sweet Ice Cream Photography, CC0",
+    welcome: "Welcome back",
+    intro: "Sign in with the access you got from your business.",
+    accessNote: "Access is set up by the owner. Forgot your password? They can help you there.",
+    footer: "Demo with invented data. Larkspur is not a real business.",
+    sampleTitle: "Courtyard summer party",
+    sampleGuests: "120 guests",
+    sampleQuote: "Quote by Friday",
+    sampleMonth: "Jun",
+    headline: "Every inquiry in view, from first contact to confirmation.",
+    subline: "Dates, guest numbers and budget in one place. The assistant writes drafts, a person decides.",
+  },
+});
 
-const PHOTO_ALT = "Langer, heller Festsaal mit gedeckten Tafeln, Holzbalken und Lichterketten";
+export const metadata: Metadata = { title: T.title };
+
+const PHOTO_ALT = T.photoAlt;
 
 function PhotoCredit({ className }: { className?: string }) {
   return (
@@ -19,7 +53,7 @@ function PhotoCredit({ className }: { className?: string }) {
       rel="noopener noreferrer"
       className={`glass rounded-full px-3 py-1 text-[11px] text-glass-fg transition-opacity hover:opacity-80 ${className ?? ""}`}
     >
-      Foto: Sweet Ice Cream Photography, CC0
+      {T.photoCredit}
     </a>
   );
 }
@@ -44,16 +78,16 @@ export default function LoginPage() {
         </div>
 
         <div className="animate-rise-in mx-auto flex w-full max-w-[22.5rem] flex-1 flex-col justify-center py-12">
-          <h1 className="display-title text-[30px] leading-tight">Willkommen zurück</h1>
-          <p className="mt-2 text-[15px] leading-relaxed text-muted">Melde dich mit dem Zugang an, den du von deinem Betrieb bekommen hast.</p>
+          <h1 className="display-title text-[30px] leading-tight">{T.welcome}</h1>
+          <p className="mt-2 text-[15px] leading-relaxed text-muted">{T.intro}</p>
           {/* Read at build time: the page is prerendered, so DEMO_LOGIN_* must be set when it is built (Vercel does). */}
           <LoginForm demo={demoAccess()} />
           <p className="mt-6 text-[13px] leading-relaxed text-muted">
-            Zugänge legt die Inhaberin oder der Inhaber an. Passwort vergessen? Dort hilft man dir weiter.
+            {T.accessNote}
           </p>
         </div>
 
-        <footer className="text-xs text-faint">Demo mit erfundenen Daten. Lindgrün ist kein echter Betrieb.</footer>
+        <footer className="text-xs text-faint">{T.footer}</footer>
       </main>
 
       <aside className="relative m-3 ml-0 hidden overflow-hidden rounded-[28px] lg:block">
@@ -65,27 +99,27 @@ export default function LoginPage() {
           <div className="glass animate-rise-in flex items-center gap-3.5 rounded-2xl py-3 pr-5 pl-3 [animation-delay:160ms]">
             <span className="flex size-11 shrink-0 flex-col items-center justify-center rounded-xl bg-primary text-on-primary">
               <span className="text-[15px] leading-none font-semibold">14</span>
-              <span className="mt-0.5 text-[10px] leading-none font-medium">Jun</span>
+              <span className="mt-0.5 text-[10px] leading-none font-medium">{T.sampleMonth}</span>
             </span>
             <span className="min-w-0">
-              <span className="block text-sm font-medium text-glass-fg">Sommerfest im Innenhof</span>
+              <span className="block text-sm font-medium text-glass-fg">{T.sampleTitle}</span>
               <span className="mt-0.5 flex items-center gap-3 text-xs text-glass-muted">
                 <span className="inline-flex items-center gap-1">
                   <Users className="size-3.5" aria-hidden />
-                  120 Gäste
+                  {T.sampleGuests}
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <CalendarDays className="size-3.5" aria-hidden />
-                  Angebot bis Freitag
+                  {T.sampleQuote}
                 </span>
               </span>
             </span>
           </div>
 
           <div className="glass animate-rise-in max-w-xl rounded-3xl p-7 [animation-delay:80ms] xl:p-8">
-            <p className="display-title text-[28px] leading-[1.15] text-glass-fg xl:text-[32px]">Jede Anfrage im Blick, vom ersten Kontakt bis zur Zusage.</p>
+            <p className="display-title text-[28px] leading-[1.15] text-glass-fg xl:text-[32px]">{T.headline}</p>
             <p className="mt-3 text-[15px] leading-relaxed text-glass-muted">
-              Termine, Gästezahl und Budget an einem Ort. Der Assistent schreibt Entwürfe, entscheiden tut ein Mensch.
+              {T.subline}
             </p>
           </div>
         </div>

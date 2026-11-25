@@ -9,10 +9,68 @@ import { BOARD_KEY, fetchBoard } from "@/lib/client/views";
 import { Dialog } from "@/components/ui/dialog";
 import { StatusDot } from "@/components/status";
 import { cn } from "@/lib/cn";
+import { LOCALE, pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    pages: "Seiten",
+    inquiries: "Anfragen",
+    actions: "Aktionen",
+    overview: "Übersicht",
+    contacts: "Kontakte",
+    teamAndApi: "Team und API",
+    showShortcuts: "Tastenkürzel anzeigen",
+    settings: "Einstellungen",
+    signOut: "Abmelden",
+    keywordsOverview: "dashboard start",
+    keywordsInquiries: "board pipeline",
+    keywordsContacts: "kunden",
+    keywordsTeam: "rollen schlüssel api",
+    keywordsShortcuts: "hilfe shortcuts",
+    keywordsSettings: "animation bewegung",
+    keywordsSignOut: "logout",
+    label: "Befehlspalette",
+    inputLabel: "Suchen oder Befehl eingeben",
+    placeholder: "Anfrage, Kontakt oder Seite suchen",
+    results: "Ergebnisse",
+    nothingFound: (query: string) => `Nichts gefunden zu „${query}“. Gesucht wird in Seiten, Anfragen, Kontakten und Firmen.`,
+    select: "auswählen",
+    open: "öffnen",
+    onlyVisible: "Nur Anfragen, die du sehen darfst",
+  },
+  en: {
+    pages: "Pages",
+    inquiries: "Inquiries",
+    actions: "Actions",
+    overview: "Overview",
+    contacts: "Contacts",
+    teamAndApi: "Team & API",
+    showShortcuts: "Show keyboard shortcuts",
+    settings: "Settings",
+    signOut: "Sign out",
+    keywordsOverview: "dashboard home start",
+    keywordsInquiries: "board pipeline",
+    keywordsContacts: "customers clients",
+    keywordsTeam: "roles key api",
+    keywordsShortcuts: "help shortcuts",
+    keywordsSettings: "animation motion",
+    keywordsSignOut: "logout sign out",
+    label: "Command palette",
+    inputLabel: "Search or enter a command",
+    placeholder: "Search inquiry, contact or page",
+    results: "Results",
+    nothingFound: (query: string) => `No matches for “${query}”. Searches pages, inquiries, contacts and companies.`,
+    select: "select",
+    open: "open",
+    onlyVisible: "Only inquiries you may see",
+  },
+});
+
+const GROUP_LABELS = { pages: T.pages, inquiries: T.inquiries, actions: T.actions };
 
 interface Command {
   id: string;
-  group: "Seiten" | "Anfragen" | "Aktionen";
+  group: "pages" | "inquiries" | "actions";
   label: string;
   hint?: string;
   icon: ReactNode;
@@ -20,7 +78,7 @@ interface Command {
   run: () => void;
 }
 
-const normalise = (text: string) => text.toLocaleLowerCase("de").normalize("NFD").replace(/\p{Diacritic}/gu, "");
+const normalise = (text: string) => text.toLocaleLowerCase(LOCALE).normalize("NFD").replace(/\p{Diacritic}/gu, "");
 
 /**
  * Ctrl+K / Cmd+K: jump to a page, open an inquiry by title, contact or
@@ -50,21 +108,21 @@ export function CommandPalette({
   const commands = useMemo<Command[]>(() => {
     const go = (href: string) => () => router.push(href);
     const pages: Command[] = [
-      { id: "p-overview", group: "Seiten", label: "Übersicht", icon: <LayoutDashboard className="size-4" />, keywords: "dashboard start", run: go("/") },
-      { id: "p-inquiries", group: "Seiten", label: "Anfragen", icon: <Inbox className="size-4" />, keywords: "board pipeline", run: go("/inquiries") },
-      { id: "p-contacts", group: "Seiten", label: "Kontakte", icon: <UsersRound className="size-4" />, keywords: "kunden", run: go("/contacts") },
+      { id: "p-overview", group: "pages", label: T.overview, icon: <LayoutDashboard className="size-4" />, keywords: T.keywordsOverview, run: go("/") },
+      { id: "p-inquiries", group: "pages", label: T.inquiries, icon: <Inbox className="size-4" />, keywords: T.keywordsInquiries, run: go("/inquiries") },
+      { id: "p-contacts", group: "pages", label: T.contacts, icon: <UsersRound className="size-4" />, keywords: T.keywordsContacts, run: go("/contacts") },
       ...(owner
-        ? [{ id: "p-team", group: "Seiten" as const, label: "Team und API", icon: <Settings2 className="size-4" />, keywords: "rollen schlüssel api", run: go("/team") }]
+        ? [{ id: "p-team", group: "pages" as const, label: T.teamAndApi, icon: <Settings2 className="size-4" />, keywords: T.keywordsTeam, run: go("/team") }]
         : []),
     ];
     const actions: Command[] = [
-      { id: "a-keys", group: "Aktionen", label: "Tastenkürzel anzeigen", icon: <Keyboard className="size-4" />, keywords: "hilfe shortcuts", run: onShowShortcuts },
-      { id: "a-settings", group: "Aktionen", label: "Einstellungen", icon: <SlidersHorizontal className="size-4" />, keywords: "animation bewegung", run: onShowSettings },
-      { id: "a-signout", group: "Aktionen", label: "Abmelden", icon: <LogOut className="size-4" />, keywords: "logout", run: onSignOut },
+      { id: "a-keys", group: "actions", label: T.showShortcuts, icon: <Keyboard className="size-4" />, keywords: T.keywordsShortcuts, run: onShowShortcuts },
+      { id: "a-settings", group: "actions", label: T.settings, icon: <SlidersHorizontal className="size-4" />, keywords: T.keywordsSettings, run: onShowSettings },
+      { id: "a-signout", group: "actions", label: T.signOut, icon: <LogOut className="size-4" />, keywords: T.keywordsSignOut, run: onSignOut },
     ];
     const found: Command[] = inquiries.map((inquiry) => ({
       id: `i-${inquiry.id}`,
-      group: "Anfragen",
+      group: "inquiries",
       label: inquiry.title,
       hint: inquiry.contact?.company ?? inquiry.contact?.full_name ?? undefined,
       icon: <StatusDot status={inquiry.status} />,
@@ -79,8 +137,8 @@ export function CommandPalette({
     const match = (c: Command) => !needle || normalise(`${c.label} ${c.hint ?? ""} ${c.keywords ?? ""}`).includes(needle);
     const list = commands.filter(match);
     // Without a query, show a short list of inquiries instead of all of them.
-    const limited = needle ? list.filter((c) => c.group !== "Anfragen").concat(list.filter((c) => c.group === "Anfragen").slice(0, 8)) : list.filter((c) => c.group !== "Anfragen").concat(list.filter((c) => c.group === "Anfragen").slice(0, 4));
-    const order = { Seiten: 0, Anfragen: 1, Aktionen: 2 };
+    const limited = needle ? list.filter((c) => c.group !== "inquiries").concat(list.filter((c) => c.group === "inquiries").slice(0, 8)) : list.filter((c) => c.group !== "inquiries").concat(list.filter((c) => c.group === "inquiries").slice(0, 4));
+    const order = { pages: 0, inquiries: 1, actions: 2 };
     return limited.sort((a, b) => order[a.group] - order[b.group]);
   }, [commands, query]);
 
@@ -115,7 +173,7 @@ export function CommandPalette({
     header: index === 0 || results[index - 1].group !== command.group ? command.group : null,
   }));
   return (
-    <Dialog open={open} onClose={close} label="Befehlspalette">
+    <Dialog open={open} onClose={close} label={T.label}>
       <div className="flex items-center gap-3 px-5">
         <Search className="size-4 shrink-0 text-faint" aria-hidden />
         <input
@@ -130,22 +188,22 @@ export function CommandPalette({
           aria-expanded="true"
           aria-controls="palette-list"
           aria-activedescendant={results[active] ? `palette-${results[active].id}` : undefined}
-          aria-label="Suchen oder Befehl eingeben"
-          placeholder="Anfrage, Kontakt oder Seite suchen"
+          aria-label={T.inputLabel}
+          placeholder={T.placeholder}
           className="h-16 flex-1 bg-transparent text-base placeholder:text-faint focus:outline-none focus-visible:outline-none"
         />
         <kbd className="rounded-full bg-raised px-2.5 py-1 font-sans text-[11px] text-muted">Esc</kbd>
       </div>
-      <ul id="palette-list" role="listbox" aria-label="Ergebnisse" className="flex max-h-[min(60vh,26rem)] flex-col gap-1 overflow-y-auto px-2.5 pb-2.5">
+      <ul id="palette-list" role="listbox" aria-label={T.results} className="flex max-h-[min(60vh,26rem)] flex-col gap-1 overflow-y-auto px-2.5 pb-2.5">
         {results.length === 0 && (
           <li className="px-3 py-8 text-center text-sm text-muted">
-            Nichts gefunden zu „{query.trim()}“. Gesucht wird in Seiten, Anfragen, Kontakten und Firmen.
+            {T.nothingFound(query.trim())}
           </li>
         )}
         {rows.map(({ command, index, header }) => {
           return (
             <li key={command.id} role="presentation">
-              {header && <p className="px-3 pt-3 pb-1.5 text-xs font-medium text-muted">{header}</p>}
+              {header && <p className="px-3 pt-3 pb-1.5 text-xs font-medium text-muted">{GROUP_LABELS[header]}</p>}
               <div
                 id={`palette-${command.id}`}
                 role="option"
@@ -165,16 +223,16 @@ export function CommandPalette({
                   {command.hint && <span className="ml-2 text-xs text-muted">{command.hint}</span>}
                 </span>
                 {index === active && <CornerDownLeft className="relative size-3.5 shrink-0 text-muted" aria-hidden />}
-                {command.group === "Anfragen" && index !== active && <FileText className="relative size-3.5 shrink-0 text-faint" aria-hidden />}
+                {command.group === "inquiries" && index !== active && <FileText className="relative size-3.5 shrink-0 text-faint" aria-hidden />}
               </div>
             </li>
           );
         })}
       </ul>
       <div className="flex items-center gap-4 bg-raised px-5 py-3 text-xs text-muted">
-        <span><kbd className="font-sans">↑</kbd> <kbd className="font-sans">↓</kbd> auswählen</span>
-        <span><kbd className="font-sans">Enter</kbd> öffnen</span>
-        <span className="ml-auto">Nur Anfragen, die du sehen darfst</span>
+        <span><kbd className="font-sans">↑</kbd> <kbd className="font-sans">↓</kbd> {T.select}</span>
+        <span><kbd className="font-sans">Enter</kbd> {T.open}</span>
+        <span className="ml-auto">{T.onlyVisible}</span>
       </div>
     </Dialog>
   );

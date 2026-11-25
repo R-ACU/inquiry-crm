@@ -1,3 +1,4 @@
+import { BUSINESS_TIME_ZONE } from "@/lib/i18n";
 import { isInquiryStatus, isOpen, type EventType, type InquiryStatus } from "./status";
 
 /**
@@ -23,7 +24,6 @@ export const BUCKETS: Record<PeriodDays, { count: number; days: number }> = {
 };
 
 const DAY = 86_400_000;
-const TIME_ZONE = "Europe/Berlin";
 
 export interface OverviewInquiry {
   id: string;
@@ -241,7 +241,7 @@ export function computeOverview(
 
 /** Calendar day in the business time zone, as YYYY-MM-DD. */
 export function berlinDay(t: number): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(new Date(t));
+  return new Intl.DateTimeFormat("en-CA", { timeZone: BUSINESS_TIME_ZONE }).format(new Date(t));
 }
 
 function dayNumber(isoDay: string): number {

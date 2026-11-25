@@ -5,6 +5,22 @@ import { useRouter } from "next/navigation";
 import { addNote } from "@/lib/actions/inquiries";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/shell/providers";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    note: "Notiz",
+    placeholder: "Notiz für das Team, zum Beispiel ein Telefonat oder eine Absprache",
+    hint: "Strg und Enter speichert",
+    save: "Notiz speichern",
+  },
+  en: {
+    note: "Note",
+    placeholder: "Note for the team, for example a phone call or an agreement",
+    hint: "Ctrl and Enter saves",
+    save: "Save note",
+  },
+});
 
 /** Tallest the field grows before it scrolls inside: about 14 lines. */
 const MAX_HEIGHT = 320;
@@ -63,7 +79,7 @@ export function NoteComposer({ inquiryId }: { inquiryId: string }) {
       }}
     >
       <label htmlFor="note-body" className="sr-only">
-        Notiz
+        {T.note}
       </label>
       <textarea
         id="note-body"
@@ -78,7 +94,7 @@ export function NoteComposer({ inquiryId }: { inquiryId: string }) {
         }}
         rows={3}
         maxLength={4000}
-        placeholder="Notiz für das Team, zum Beispiel ein Telefonat oder eine Absprache"
+        placeholder={T.placeholder}
         className="scroll-quiet block w-full resize-none overflow-hidden rounded-t-[22px] bg-transparent px-5 pt-4 pb-2 text-sm placeholder:text-faint focus:outline-none focus-visible:outline-none"
       />
       {/* The footer belongs to the field: a click beside the button puts the cursor into the text. */}
@@ -93,9 +109,9 @@ export function NoteComposer({ inquiryId }: { inquiryId: string }) {
           field.setSelectionRange(field.value.length, field.value.length);
         }}
       >
-        <span className="hidden pl-2 text-xs text-muted sm:inline">Strg und Enter speichert</span>
+        <span className="hidden pl-2 text-xs text-muted sm:inline">{T.hint}</span>
         <Button type="submit" variant="primary" size="sm" pending={pending} disabled={!body.trim()} className="ml-auto">
-          Notiz speichern
+          {T.save}
         </Button>
       </div>
     </form>

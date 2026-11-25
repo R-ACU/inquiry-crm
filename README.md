@@ -4,13 +4,15 @@
 
 A small CRM for a catering and events business that receives inquiries by web form and API. Next.js 16 (App Router), TypeScript, Tailwind CSS, Supabase (Auth, Postgres, row level security), TanStack Query, Zod, and a Claude-based assistant that drafts, never decides.
 
-All data is invented. "Lindgrün Catering & Events" is not a real business.
+All data is invented. "Lindgrün Catering & Events" (German demo) and "Larkspur Catering & Events" (English demo) are not real businesses.
 
-**Live demo:** https://anfragen-crm.vercel.app (one click on the login page signs in as the owner or as staff; the data is reset every night).
+**Live demo in English:** https://inquiry-crm-demo.vercel.app, an Irish caterer in Dublin.
+**Live demo in German:** https://anfragen-crm.vercel.app, a caterer in Hamburg.
+One click on the login page signs in as the owner or as staff; the data is reset every night. Both run the same code and one database: each business is a workspace, and RLS keeps them apart.
 
 ![Overview as a bento grid: pipeline value as pill bars on a dark hero card, new and open inquiries, won volume, win-rate gauge, upcoming events and inquiries per week](docs/screenshots/overview-desktop.png)
 
-*All screenshots come from the local preview with invented data; the assistant runs in test mode there (fixed answers, no model call). Deutsche Kurzfassung am Ende.*
+*The screenshots show the German demo, from the local preview with invented data; the assistant runs in test mode there (fixed answers, no model call). Deutsche Kurzfassung am Ende.*
 
 ## Problem
 
@@ -25,7 +27,8 @@ A caterer gets inquiries from a web form, by phone and from partner platforms. T
 5. **Assistant.** On request, Claude summarises the inquiry and proposes up to three follow-up questions. The result is a draft. Only a person can turn it into a note. The database limits drafts per person and per day before the model is called.
 6. **Calendar.** Each event can be downloaded as an `.ics` file for any calendar app.
 7. **Roles.** The owner sees and changes everything and manages roles and API keys. Staff see only their assigned inquiries and the contacts of those inquiries. Postgres enforces this with RLS, not the UI.
-8. **Working fast.** A header with the four areas, a command palette (Ctrl+K) that finds pages, inquiries, contacts and companies the user may open, notifications for new arrivals, a profile menu with settings (reduce motion) and a shortcut help (`?`, `g` then `a`, `k`, `t` or `ü`). On a phone the areas move to a tab bar at the bottom. Switching areas works like an app: an area seen before is back at once with its data, filters and scroll position and refreshes itself quietly; a loading placeholder shows only on a first visit that takes longer than 0.4 s.
+8. **Two languages.** The same app is built once in English and once in German (`APP_LOCALE`): texts, date and number formats and the business time zone (Dublin or Berlin) switch together. Both demos share one Supabase project as two workspaces; every RLS policy and every `security definer` function keeps a member inside their own workspace (see [DECISIONS.md](DECISIONS.md) and [SECURITY.md](SECURITY.md)).
+9. **Working fast.** A header with the four areas, a command palette (Ctrl+K) that finds pages, inquiries, contacts and companies the user may open, notifications for new arrivals, a profile menu with settings (reduce motion) and a shortcut help (`?`, `g` then `a`, `k`, `t` or `ü`). On a phone the areas move to a tab bar at the bottom. Switching areas works like an app: an area seen before is back at once with its data, filters and scroll position and refreshes itself quietly; a loading placeholder shows only on a first visit that takes longer than 0.4 s.
 
 | Pipeline board | Inquiry with AI draft |
 | :---: | :---: |
@@ -84,11 +87,12 @@ How it is built:
 
 Measured on the development machine (Windows laptop, Node 24):
 
-- **452 Vitest tests** pass in about 15 seconds: 100 database tests against Postgres (PGlite) running the shipped migrations and seed (including that every note, assignment and status change in the seed is one RLS would have allowed at that moment), 25 API tests that drive the real route handlers, the real sign-in action and the real `supabase-js` client, 327 unit tests for validation, money, time zones, calendar export, API keys, cookies, throttling, the AI layer, the overview figures and the themes (hostile values against the theme selection and the head script, and the contrast of every colour pair in every accent and mode).
-- **33 Playwright tests** pass in about 85 seconds in headless Chromium against the production build (about three minutes against the dev server), and pass again on a second run against the same server. Five cover the accents and modes (each accent loads with its variables, keeps them after sign-in and logs no console errors; a hostile `?firma=` value ends up as `neutral`; dark mode survives a reload and the `D` key switches back), three cover the overview, the command palette and the keyboard shortcuts, including that a staff member's palette offers neither admin pages nor foreign inquiries. Four cover switching areas: a view seen before is back within a second even while the server's answer is held back, without a placeholder and without replaying its entrance; a card moved on the board shows on the contacts page; after signing out nothing of the session is left in the page, and the next person sees only their own data.
+- **526 Vitest tests** pass in about 30 seconds: 167 database tests against Postgres (PGlite) running the shipped migrations and both seeds (including that every note, assignment and status change in each seed is one RLS would have allowed at that moment, and 29 tests that attack the wall between the two workspaces from both sides), 25 API tests that drive the real route handlers, the real sign-in action and the real `supabase-js` client, 334 unit tests for validation, money, time zones, calendar export, API keys, cookies, throttling, the AI layer, the overview figures, the English build and the themes (hostile values against the theme selection and the head script, and the contrast of every colour pair in every accent and mode).
+- **9 Playwright tests for the English build** read the login page, every main view, menu and dialog, an AI draft, the calendar file and the error pages, as owner and as staff, and fail on any German word or any row of the German demo.
+- **33 Playwright tests** for the German build pass in about 85 seconds in headless Chromium against the production build (about three minutes against the dev server), and pass again on a second run against the same server. Five cover the accents and modes (each accent loads with its variables, keeps them after sign-in and logs no console errors; a hostile `?firma=` value ends up as `neutral`; dark mode survives a reload and the `D` key switches back), three cover the overview, the command palette and the keyboard shortcuts, including that a staff member's palette offers neither admin pages nor foreign inquiries. Four cover switching areas: a view seen before is back within a second even while the server's answer is held back, without a placeholder and without replaying its entrance; a card moved on the board shows on the contacts page; after signing out nothing of the session is left in the page, and the next person sees only their own data.
 - **Switching back to an area takes 30 to 90 ms** to full content in the production build (local preview, headless Chromium), with no request to the server. Before, every switch rendered the page again and showed its skeleton (about 0.9 s on the dev server).
-- **The tests catch regressions.** Replacing the inquiry read policy with `using (true)` made 7 of the 65 database tests fail. Restoring the column grants and the API key trigger from before the security review made 6 fail.
-- **16 policies, 10 `security definer` functions,** all with an empty `search_path`. A test fails if a table without RLS, a function without a pinned search path, an unexpected definer function or any new right for `anon` appears.
+- **The tests catch regressions.** Replacing the inquiry read policy with `using (true)` made 7 of the 65 database tests fail. Restoring the column grants and the API key trigger from before the security review made 6 fail. Dropping the workspace condition from the inquiry read policy made 8 of the 167 database tests fail; giving every caller the German workspace made 12 fail.
+- **16 policies, 11 `security definer` functions,** all with an empty `search_path`. A test fails if a table without RLS, a function without a pinned search path, an unexpected definer function or any new right for `anon` appears.
 - `npm audit --omit=dev`: 0 known vulnerabilities at build time.
 
 Not measured yet, because it needs the real Claude API: quality of summaries and questions on real inquiries, latency and cost per draft. The mock mode answers instantly with fixed text; those numbers say nothing about the model.
@@ -112,7 +116,7 @@ npm ci
 npm run preview          # local Supabase stand-in on :3211 and Next.js dev server on :3210
 ```
 
-Open http://127.0.0.1:3210 and sign in. Password for all three: `Lindgruen-Demo-2026`
+Open http://127.0.0.1:3210 and sign in. Password for all three: `Lindgruen-Demo-2026`. The English demo: `npm run build:en`, then `PREVIEW_MODE=start npm run preview:en` (or `npm run preview:en` for the dev server), on http://127.0.0.1:3212, password `Larkspur-Demo-2026` for `niamh@larkspur.example` (owner), `conor@larkspur.example` and `aoife@larkspur.example` (staff).
 
 | Account | Role |
 | :--- | :--- |
@@ -120,7 +124,7 @@ Open http://127.0.0.1:3210 and sign in. Password for all three: `Lindgruen-Demo-
 | `jonas@lindgruen.example` | staff |
 | `mira@lindgruen.example` | staff |
 
-The stand-in keeps data in memory and resets to the seed on every start. The seed shows a team at work: notes, assignments (including one handover), status changes and an accepted AI draft by all three people, each a step RLS would have allowed at that moment (`tests/db/seed-history.test.ts`). The seed is written as of 24 November 2026 and moves itself to the day it runs: timestamps by whole days (the newest inquiry is from today, or yesterday early in the morning), event dates by whole weeks so weekdays stay, so the overview and the upcoming events are never empty. The app itself never moves a date. For a production build: `npm run build`, then `PREVIEW_MODE=start npm run preview`.
+The stand-in keeps data in memory and resets to both seeds on every start (`supabase/seed.sql` for the German workspace, `supabase/seed-en.sql` for the English one, row by row the same story). Each seed shows a team at work: notes, assignments (including one handover), status changes and an accepted AI draft by all three people, each a step RLS would have allowed at that moment (`tests/db/seed-history.test.ts`). The seed is written as of 24 November 2026 and moves itself to the day it runs: timestamps by whole days (the newest inquiry is from today, or yesterday early in the morning), event dates by whole weeks so weekdays stay, so the overview and the upcoming events are never empty. The app itself never moves a date. For a production build: `npm run build`, then `PREVIEW_MODE=start npm run preview`.
 
 ## Tests and checks
 
@@ -128,6 +132,7 @@ The stand-in keeps data in memory and resets to the seed on every start. The see
 npm test                 # all Vitest suites: unit, API, RLS
 npm run test:db          # only the RLS and SQL function tests
 npm run test:e2e         # Playwright, starts the preview itself if it is not running
+npm run test:e2e:en      # the English build (run npm run build:en first with PREVIEW_MODE=start)
 npm run screenshots      # regenerates docs/screenshots (run against a fresh preview)
 npm run lint
 npm run typecheck        # run `npx next typegen` once first on a fresh checkout
@@ -147,14 +152,16 @@ src/lib/actions/            Server Actions: validate with Zod, write with the us
 src/lib/domain/             pure logic: KPIs, money, time zones, ICS, intake schema, API keys, throttling
 src/lib/ai/                 assistant: real mode (Claude), mock mode, prompts, output schemas
 src/lib/theme/              theme list, selection and the head script
+src/lib/i18n.ts             language of the build (APP_LOCALE), formats, business time zone
 src/lib/domain/overview.ts  figures for the overview: periods, status timeline, weeks, upcoming events
 src/components/overview/    overview page and its charts (plain SVG and CSS, no chart library)
 src/components/shell/       header, command palette, notifications, profile menu, shortcuts
 supabase/migrations/        schema, RLS policies, privileges, functions, triggers
-supabase/seed.sql           invented demo data: 3 users, 20 contacts, 30 inquiries, the team's notes and history
+supabase/seed.sql           invented demo data, German workspace: 3 users, 20 contacts, 30 inquiries, the team's notes and history
+supabase/seed-en.sql        the same for the English workspace (Dublin)
 fixtures/ai/                fixed assistant answers for mock mode
 tests/                      Vitest: unit, api, db (PGlite harness in tests/support)
-e2e/                        Playwright tests, preview script, local Supabase stand-in
+e2e/                        Playwright tests, preview script, local Supabase stand-in; e2e/en for the English build
 docs/themes/                what each company theme borrows, with the measured values
 ```
 
@@ -209,7 +216,8 @@ Steps as run for the live demo.
    | `SUPABASE_PUBLISHABLE_KEY` | Project Settings, API Keys, publishable key (not the secret key) |
    | `APP_URL` | `https://<your-app>.vercel.app` |
    | `AI_MODE` | `mock` (keep it for a public demo; see step 8) |
-   | `DEMO_LOGIN_PASSWORD`, `DEMO_LOGIN_ACCOUNTS` | Public demo only: the seed password and a JSON list such as `[{"email":"lena@lindgruen.example","name":"Lena Hoffmann","role":"Inhaberin"}]`. The login page then shows a "Demo-Zugang" card with one sign-in button per account. They are read when the page is built, so redeploy after changing them. Leave both unset anywhere else. |
+   | `APP_LOCALE` | `en` for the English build; unset means German. Read at build time |
+   | `DEMO_LOGIN_PASSWORD`, `DEMO_LOGIN_ACCOUNTS` | Public demo only: the seed password and a JSON list such as `[{"email":"lena@lindgruen.example","name":"Lena Hoffmann","role":"Inhaberin"}]` (English: `[{"email":"niamh@larkspur.example","name":"Niamh Byrne","role":"Owner"}]`). The login page then shows a "Demo-Zugang" card with one sign-in button per account. They are read when the page is built, so redeploy after changing them. Leave both unset anywhere else. |
 6. **Test login.** Open the Vercel URL, sign in as `jonas@lindgruen.example` with `Lindgruen-Demo-2026`: 12 inquiries. Then as `lena@lindgruen.example`: 30 inquiries, and "Team und API" is visible.
 7. **Smoke-test the API.** As Lena, create a key under "Team und API", run the curl example above against the Vercel URL, expect `201`, and see the inquiry under "Neu".
 8. **Optional: real AI, not for a public demo.** Set `AI_MODE=anthropic` and `ANTHROPIC_API_KEY` in Vercel only for a private deployment. Every "Entwurf erstellen" then costs API credits; the database allows 6 drafts per person in 10 minutes and 100 per day. Also set a monthly spend limit in the Anthropic Console.
@@ -232,9 +240,11 @@ MIT, see [LICENSE](LICENSE).
 
 **Look und Themes.** Ein ruhiges, gerundetes SaaS-Dashboard mit Bento-Karten, der Schrift Allo und weichen Flächen statt Linien, hell als Standard und mit einem Schalter (oder der Taste D) dunkel in tiefem Schwarz; der Browser merkt sich die Wahl. `?firma=everlast` oder `?firma=refundrebel` ändert nur die Akzentfarbe (Indigo, Teal), ohne Parameter ist sie blau. Akzente sind immer kühl, Rot steht nur für Fehler. Die Auswahl kommt aus einer festen Liste, alles andere fällt auf neutral zurück; ein Unit-Test prüft den Kontrast jedes Farbpaars in jedem Akzent und Modus nach WCAG AA.
 
-**Ergebnis.** 452 Vitest-Tests (davon 100 gegen eine echte Postgres-Engine mit den ausgelieferten Migrationen) und 33 Playwright-Tests sind grün. Ein schon besuchter Bereich ist beim Zurückwechseln in 30 bis 90 ms vollständig da, ohne Ladeanimation und ohne Anfrage an den Server; nach dem Abmelden bleibt nichts von der Sitzung im Tab. Eine absichtlich kaputte Policy ließ 7 Datenbanktests fehlschlagen, die alten Rechte von vor der Sicherheitsprüfung 6. Qualität, Dauer und Kosten der KI-Entwürfe sind noch nicht gemessen, das geht erst mit der echten API.
+**Zwei Sprachen.** Dieselbe App wird einmal deutsch und einmal englisch gebaut (`APP_LOCALE`), mit eigenen Demodaten: ein erfundener Caterer in Dublin. Beide Demos liegen als zwei Workspaces in einem Supabase-Projekt; jede RLS-Policy und jede `security definer`-Funktion hält ein Konto in seinem Workspace, ein Trigger verhindert Verweise über die Grenze.
 
-**Live:** https://anfragen-crm.vercel.app, ein Klick auf der Anmeldeseite meldet als Inhaberin oder Mitarbeiter an, die Daten werden jede Nacht zurückgesetzt.
+**Ergebnis.** 526 Vitest-Tests (davon 167 gegen eine echte Postgres-Engine mit den ausgelieferten Migrationen, 29 davon greifen die Grenze zwischen den Workspaces an), 33 Playwright-Tests für die deutsche und 9 für die englische Fassung (kein deutsches Wort, keine deutsche Zeile) sind grün. Ein schon besuchter Bereich ist beim Zurückwechseln in 30 bis 90 ms vollständig da, ohne Ladeanimation und ohne Anfrage an den Server; nach dem Abmelden bleibt nichts von der Sitzung im Tab. Eine absichtlich kaputte Policy ließ 7 Datenbanktests fehlschlagen, die alten Rechte von vor der Sicherheitsprüfung 6, eine Policy ohne Workspace-Bedingung 8. Qualität, Dauer und Kosten der KI-Entwürfe sind noch nicht gemessen, das geht erst mit der echten API.
+
+**Live:** https://anfragen-crm.vercel.app (deutsch) und https://inquiry-crm-demo.vercel.app (englisch), ein Klick auf der Anmeldeseite meldet als Inhaberin oder Mitarbeiter an, die Daten werden jede Nacht zurückgesetzt.
 
 **Grenzen.** Kostenloses Supabase-Projekt, Assistent im Testmodus, keine manuelle Anfrage-Erfassung, kein Mailversand, keine Zahlung. Details in [SECURITY.md](SECURITY.md) und [DECISIONS.md](DECISIONS.md).
 

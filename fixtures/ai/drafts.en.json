@@ -1,0 +1,29 @@
+{
+  "e1000000-0000-4000-8000-000000000001": {
+    "summary": "Corrib Software is planning a Christmas party on 12 December for about 40 people at its own office on Hanover Quay. It would like finger food and a hot main course, a mix of vegetarian and meat, with a budget of around €1,500.",
+    "questions": [
+      "How many of the 40 guests are vegetarian, and will any guests be vegan?",
+      "Are there any allergies or intolerances we should plan for?",
+      "Is there a kitchen or power for warming equipment at the office, and where can we deliver?"
+    ],
+    "eventType": "corporate"
+  },
+  "e1000000-0000-4000-8000-000000000006": {
+    "summary": "Ciara Murphy is getting married on 8 May 2027 at Knockaree House and expects 90 guests. Whether it will be a set menu or a buffet is still open. The couple are bringing the wedding cake themselves and the budget is €9,500.",
+    "questions": [
+      "What time does the reception start, and until when should the catering be booked?",
+      "Are you leaning towards a set menu or a buffet?",
+      "Is there a kitchen in the barn, or should we bring a mobile kitchen?"
+    ],
+    "eventType": "wedding"
+  },
+  "e1000000-0000-4000-8000-000000000025": {
+    "summary": "Brady Property Group would like to host a Christmas dinner for 25 people at its own offices on 18 December, from 7 to 11 pm. No budget has been given.",
+    "questions": [
+      "Roughly what budget per person are you planning with?",
+      "Would you like a seated dinner or a buffet?",
+      "Are there allergies or dietary requirements we should take into account?"
+    ],
+    "eventType": "corporate"
+  }
+}

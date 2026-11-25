@@ -5,6 +5,12 @@ import { motion, useReducedMotionConfig, type TargetAndTransition } from "motion
 import { Eye, EyeOff } from "lucide-react";
 import { inputClasses } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: { show: "Passwort anzeigen" },
+  en: { show: "Show password" },
+});
 
 /**
  * A blink: the icon that leaves closes like an eyelid, the one that comes
@@ -84,7 +90,7 @@ export function PasswordInput({ id, className, ...rest }: PasswordInputProps) {
       />
       <button
         type="button"
-        aria-label="Passwort anzeigen"
+        aria-label={T.show}
         aria-pressed={visible}
         aria-controls={id}
         onMouseDown={(e) => e.preventDefault()}

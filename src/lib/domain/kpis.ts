@@ -1,3 +1,4 @@
+import { INTL_LOCALE, pick } from "@/lib/i18n";
 import type { InquiryStatus } from "./status";
 
 export interface KpiInput {
@@ -57,6 +58,6 @@ export function computeKpis(inquiries: readonly KpiInput[]): Kpis {
 }
 
 export function formatPercent(rate: number | null): string {
-  if (rate === null) return "noch keine";
-  return new Intl.NumberFormat("de-DE", { style: "percent", maximumFractionDigits: 0 }).format(rate);
+  if (rate === null) return pick({ de: "noch keine", en: "none yet" });
+  return new Intl.NumberFormat(INTL_LOCALE, { style: "percent", maximumFractionDigits: 0 }).format(rate);
 }

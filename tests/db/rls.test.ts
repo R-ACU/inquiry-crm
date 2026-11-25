@@ -29,8 +29,8 @@ function hashKey(raw: string) {
 
 async function createApiKey(raw: string, options: { revoked?: boolean; limit?: number } = {}) {
   await t.db.query(
-    `insert into public.api_keys (name, key_prefix, key_hash, rate_limit_per_minute, created_by, revoked_at)
-     values ($1, $2, $3, $4, $5, $6)`,
+    `insert into public.api_keys (name, key_prefix, key_hash, rate_limit_per_minute, created_by, revoked_at, workspace)
+     values ($1, $2, $3, $4, $5, $6, 'de')`,
     [
       "Test",
       raw.slice(0, 12),
@@ -67,6 +67,7 @@ describe("schema hygiene", () => {
     );
     expect(rows.map((r) => r.proname)).toEqual([
       "accept_ai_draft",
+      "current_workspace",
       "discard_ai_draft",
       "handle_new_user",
       "ingest_inquiry",
@@ -637,7 +638,7 @@ describe("AI draft budget (reserve_ai_draft)", () => {
   it("stops every draft once the daily limit for the whole business is reached", async () => {
     await t.db.query(`delete from public.ai_usage`);
     await t.db.query(
-      `insert into public.ai_usage (user_id, created_at) select $1, now() - interval '1 hour' from generate_series(1, 100)`,
+      `insert into public.ai_usage (user_id, created_at, workspace) select $1, now() - interval '1 hour', 'de' from generate_series(1, 100)`,
       [SEED.owner],
     );
     await expect(reserve(SEED.staffMira, SEED.inquiryOfMira)).rejects.toMatchObject({

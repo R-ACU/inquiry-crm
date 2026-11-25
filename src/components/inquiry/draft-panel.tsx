@@ -12,6 +12,48 @@ import { formatTimestamp } from "@/lib/domain/time";
 import { Button } from "@/components/ui/button";
 import { IconCircle } from "@/components/ui/page-header";
 import { useToast } from "@/components/shell/providers";
+import { pick } from "@/lib/i18n";
+
+const T = pick({
+  de: {
+    accepted: "Entwurf als Notiz übernommen.",
+    discarded: "Entwurf verworfen.",
+    createdLine: (timestamp: string, model: string) =>
+      `Erstellt ${timestamp} ${model === "mock" ? "im Testmodus mit festen Beispielantworten, ohne KI-Aufruf" : `von ${model}`}. Der Entwurf ändert nichts an der Anfrage, bis du ihn übernimmst.`,
+    heading: "Assistent",
+    subtitle: "Fasst zusammen und schlägt Rückfragen vor. Entscheiden tust du.",
+    testMode: "Testmodus",
+    reading: "Die Anfrage wird gelesen und zusammengefasst.",
+    draft: "Entwurf",
+    suggestedQuestions: "Vorgeschlagene Rückfragen",
+    classifiedAs: "Eingeordnet als",
+    accept: "Als Notiz übernehmen",
+    copied: "Kopiert",
+    copyQuestions: "Rückfragen kopieren",
+    discard: "Verwerfen",
+    idle: "Liest die Anfrage, fasst sie in zwei Sätzen zusammen und schlägt Rückfragen für ein Angebot vor. Nichts wird gespeichert, bis du den Entwurf übernimmst.",
+    create: "Entwurf erstellen",
+  },
+  en: {
+    accepted: "Draft saved as a note.",
+    discarded: "Draft discarded.",
+    createdLine: (timestamp: string, model: string) =>
+      `Created ${timestamp} ${model === "mock" ? "in test mode with fixed sample replies, no AI call" : `by ${model}`}. The draft changes nothing about the inquiry until you save it.`,
+    heading: "Assistant",
+    subtitle: "Summarises and suggests follow-up questions. You decide.",
+    testMode: "Test mode",
+    reading: "Reading and summarising the inquiry.",
+    draft: "Draft",
+    suggestedQuestions: "Suggested follow-up questions",
+    classifiedAs: "Classified as",
+    accept: "Save as note",
+    copied: "Copied",
+    copyQuestions: "Copy questions",
+    discard: "Discard",
+    idle: "Reads the inquiry, summarises it in two sentences and suggests follow-up questions for a quote. Nothing is saved until you accept the draft.",
+    create: "Create draft",
+  },
+});
 
 export interface DraftView {
   id: string;
@@ -65,10 +107,10 @@ export function DraftPanel({
         return;
       }
       if (kind === "accept") {
-        toast("success", "Entwurf als Notiz übernommen.");
+        toast("success", T.accepted);
         await refreshViews(queryClient);
       }
-      if (kind === "discard") toast("success", "Entwurf verworfen.");
+      if (kind === "discard") toast("success", T.discarded);
       router.refresh();
     });
   }
@@ -80,7 +122,6 @@ export function DraftPanel({
     window.setTimeout(() => setCopied(false), 2000);
   }
 
-  const modelLabel = (model: string) => (model === "mock" ? "im Testmodus mit festen Beispielantworten, ohne KI-Aufruf" : `von ${model}`);
   const state = pending && action === "create" ? "loading" : draft ? "draft" : "idle";
 
   return (
@@ -89,18 +130,18 @@ export function DraftPanel({
         <IconCircle icon={Sparkles} tone="soft" />
         <div className="min-w-0 flex-1">
           <h2 id="assistant-heading" className="heading text-[17px]">
-            Assistent
+            {T.heading}
           </h2>
-          <p className="mt-0.5 text-[13px] text-muted">Fasst zusammen und schlägt Rückfragen vor. Entscheiden tust du.</p>
+          <p className="mt-0.5 text-[13px] text-muted">{T.subtitle}</p>
         </div>
-        <span className="hidden rounded-full bg-raised px-3 py-1 text-xs font-medium text-muted sm:inline">{mode === "mock" ? "Testmodus" : "Claude"}</span>
+        <span className="hidden rounded-full bg-raised px-3 py-1 text-xs font-medium text-muted sm:inline">{mode === "mock" ? T.testMode : "Claude"}</span>
       </header>
 
       <div className="mt-5" aria-live="polite">
         <AnimatePresence mode="wait" initial={false}>
           {state === "loading" ? (
             <motion.div key="loading" {...swap} aria-busy="true" className="rounded-inner bg-raised p-5">
-              <p className="text-[13px] text-muted">Die Anfrage wird gelesen und zusammengefasst.</p>
+              <p className="text-[13px] text-muted">{T.reading}</p>
               <div className="mt-3 flex flex-col gap-2">
                 <div className="skeleton h-4 bg-hover" />
                 <div className="skeleton h-4 w-11/12 bg-hover" />
@@ -111,10 +152,10 @@ export function DraftPanel({
             <motion.div key={`draft-${draft.id}`} {...swap}>
               {/* Card in card: the draft sits on its own surface until someone decides. */}
               <div className="rounded-inner bg-accent-soft p-5">
-                <span className="inline-flex h-6 items-center rounded-full bg-surface px-2.5 text-xs font-medium text-accent-fg">Entwurf</span>
+                <span className="inline-flex h-6 items-center rounded-full bg-surface px-2.5 text-xs font-medium text-accent-fg">{T.draft}</span>
                 <p className="mt-3 max-w-prose text-[15px] leading-relaxed text-fg">{draft.summary}</p>
               </div>
-              <h3 className="mt-5 text-[13px] font-medium text-muted">Vorgeschlagene Rückfragen</h3>
+              <h3 className="mt-5 text-[13px] font-medium text-muted">{T.suggestedQuestions}</h3>
               <ol className="mt-2 flex flex-col gap-2">
                 {draft.questions.map((question, i) => (
                   <motion.li
@@ -131,31 +172,31 @@ export function DraftPanel({
               </ol>
               {draft.suggestedEventType && (
                 <p className="mt-4 text-[13px] text-muted">
-                  Eingeordnet als <span className="font-medium text-fg">{EVENT_TYPE_LABELS[draft.suggestedEventType]}</span>
+                  {T.classifiedAs} <span className="font-medium text-fg">{EVENT_TYPE_LABELS[draft.suggestedEventType]}</span>
                 </p>
               )}
               <div className="mt-5 flex flex-wrap items-center gap-2">
                 <Button variant="primary" pending={pending && action === "accept"} disabled={pending} onClick={() => run("accept")}>
-                  Als Notiz übernehmen
+                  {T.accept}
                 </Button>
                 <Button variant="secondary" onClick={copyQuestions} icon={copied ? <Check className="text-accent" aria-hidden /> : <Copy aria-hidden />}>
-                  {copied ? "Kopiert" : "Rückfragen kopieren"}
+                  {copied ? T.copied : T.copyQuestions}
                 </Button>
                 <Button variant="ghost" pending={pending && action === "discard"} disabled={pending} onClick={() => run("discard")}>
-                  Verwerfen
+                  {T.discard}
                 </Button>
               </div>
               <p className="mt-4 text-xs leading-relaxed text-muted">
-                Erstellt {formatTimestamp(draft.createdAt)} {modelLabel(draft.model)}. Der Entwurf ändert nichts an der Anfrage, bis du ihn übernimmst.
+                {T.createdLine(formatTimestamp(draft.createdAt), draft.model)}
               </p>
             </motion.div>
           ) : (
             <motion.div key="idle" {...swap} className="flex flex-col gap-4 rounded-inner bg-raised p-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-md text-[13px] leading-relaxed text-muted">
-                Liest die Anfrage, fasst sie in zwei Sätzen zusammen und schlägt Rückfragen für ein Angebot vor. Nichts wird gespeichert, bis du den Entwurf übernimmst.
+                {T.idle}
               </p>
               <Button variant="primary" disabled={pending} onClick={() => run("create")} icon={<Sparkles aria-hidden />} className="self-start sm:self-auto">
-                Entwurf erstellen
+                {T.create}
               </Button>
             </motion.div>
           )}

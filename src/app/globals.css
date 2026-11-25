@@ -1,0 +1,547 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Components only use the semantic names below; the values
+ * come from CSS variables that change with the mode (light by default,
+ * `.dark` on <html>) and the accent of the company theme
+ * (`data-theme="<slug>"` on <html>, chosen with `?firma=<slug>`).
+ *
+ * Rules for every mode and accent: no gradients, no glow, text at least
+ * WCAG AA (4.5:1) on every surface it is used on, icons, chart marks and the
+ * focus ring at least 3:1. Accents are cool and calm (blue, indigo, teal);
+ * red only means an error.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  /* Surfaces */
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-hover: var(--hover);
+  --color-track: var(--track);
+  --color-thumb: var(--thumb);
+  --color-selected: var(--accent-soft);
+  --color-selected-fg: var(--accent-fg);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  /* Text */
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-glass-fg: var(--glass-fg);
+  --color-glass-muted: var(--glass-muted);
+
+  /* Accent */
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-on-primary: #ffffff;
+  --color-focus: var(--accent);
+
+  /* Pipeline stages */
+  --color-st-new: var(--st-new);
+  --color-st-quoted: var(--st-quoted);
+  --color-st-won: var(--st-won);
+  --color-st-lost: var(--st-lost);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+
+  /* Charts: the accent, a lighter step of it, and a quiet track */
+  --color-chart-1: var(--accent);
+  --color-chart-2: var(--chart-2);
+  --color-chart-track: var(--chart-track);
+  --color-hatch: var(--hatch);
+  --color-heat-0: var(--hover);
+  --color-heat-1: var(--heat-1);
+  --color-heat-2: var(--heat-2);
+  --color-heat-3: var(--heat-3);
+  --color-heat-4: var(--heat-4);
+
+  /* Type */
+  --font-sans: var(--font-allo), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-allo), ui-sans-serif, system-ui, sans-serif;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  /* Shape */
+  --radius-control: 999px;
+  --radius-field: 14px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-inner: 22px; /* cards inside cards */
+  --radius-card: 28px; /* outer cards */
+
+  /* Depth */
+  --shadow-card: var(--card-shadow);
+  --shadow-pop: var(--pop-shadow);
+  --shadow-primary: none;
+
+  /* Motion: short and springy, never slow */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/*
+ * Light mode, neutral accent (blue). Colour values are six-digit hex only:
+ * tests/unit/theme.test.ts parses them and checks completeness and contrast.
+ */
+:root {
+  color-scheme: light;
+  --canvas: #eceef1;
+  --surface: #ffffff;
+  --raised: #f3f4f6;
+  --hover: #eef0f3;
+  --track: #e6e8ec;
+  --thumb: #ffffff;
+  --line: #e7e9ee;
+  --line-strong: #d4d8df;
+  --fg: #0e1116;
+  --muted: #545b67;
+  --faint: #646b77;
+
+  --accent: #2f64ee;
+  --accent-soft: #e6edff;
+  --accent-fg: #1f4fd1;
+  --primary: #2f64ee;
+  --primary-hover: #2558d6;
+  --chart-2: #8eaaf7;
+  --chart-track: #e3e6eb;
+  --hatch: #c3cad6;
+  --heat-1: #dbe5fe;
+  --heat-2: #a9c1fb;
+  --heat-3: #6690f4;
+  --heat-4: #2f64ee;
+
+  --st-new: #3b82f6;
+  --st-quoted: #8b5cf6;
+  --st-won: #10a36f;
+  --st-lost: #98a1b0;
+  --success: #0b7a52;
+  --success-soft: #e3f6ee;
+  --warn: #5b6170;
+  --danger: #c4321f;
+
+  --card-shadow: 0 1px 2px 0 rgb(16 24 40 / 0.03), 0 10px 30px -14px rgb(16 24 40 / 0.1);
+  --pop-shadow: 0 0 0 1px rgb(16 24 40 / 0.05), 0 16px 40px -10px rgb(16 24 40 / 0.2);
+  --lift-shadow: 0 1px 2px 0 rgb(16 24 40 / 0.04), 0 18px 40px -16px rgb(16 24 40 / 0.18);
+
+  --glass: rgb(255 255 255 / 0.72);
+  --glass-line: rgb(255 255 255 / 0.6);
+  --glass-fg: #0e1116;
+  --glass-muted: #3d434d;
+
+  --delta-up-bg: #e3f6ee;
+  --delta-up-fg: #0b6b48;
+  --delta-down-bg: #eceef2;
+  --delta-down-fg: #4a515c;
+  --delta-flat-bg: #eceef2;
+  --delta-flat-fg: #4a515c;
+
+  --avatar-1-bg: #e3ebfd;
+  --avatar-1-fg: #1e4fbf;
+  --avatar-2-bg: #e1f4f1;
+  --avatar-2-fg: #0f6b62;
+  --avatar-3-bg: #ece9fc;
+  --avatar-3-fg: #4b3bb5;
+  --avatar-4-bg: #e3f3e8;
+  --avatar-4-fg: #1c6b3a;
+  --avatar-5-bg: #e4eef6;
+  --avatar-5-fg: #275a85;
+
+  --heading-weight: 600;
+  --heading-tracking: -0.01em;
+  --display-weight: 600;
+  --display-tracking: -0.015em;
+  --button-weight: 500;
+  --body-features: "calt" 1;
+  --eyebrow-transform: none;
+  --eyebrow-tracking: 0;
+  --eyebrow-size: 0.8125rem;
+  --eyebrow-weight: 500;
+}
+
+/*
+ * Dark mode: deep black and anthracite, no blue cast. `.dark` works on
+ * <html> for the whole page and on a single card, which then becomes a dark
+ * island in the light page (the overview's hero card).
+ */
+.dark {
+  color-scheme: dark;
+  --canvas: #0b0b0c;
+  --surface: #18181b;
+  --raised: #222225;
+  --hover: #27272b;
+  --track: #222225;
+  --thumb: #34343a;
+  --line: #2a2a2e;
+  --line-strong: #3d3d44;
+  --fg: #f4f4f5;
+  --muted: #a1a1aa;
+  --faint: #94949c;
+
+  --accent: #5d8bff;
+  --accent-soft: #1c2236;
+  --accent-fg: #9bb7ff;
+  --chart-2: #bccbff;
+  --chart-track: #2a2a2e;
+  --hatch: #3f3f46;
+  --heat-1: #1a2441;
+  --heat-2: #2a4386;
+  --heat-3: #4170e0;
+  --heat-4: #7ea2ff;
+
+  --st-new: #60a5fa;
+  --st-quoted: #a78bfa;
+  --st-won: #34d399;
+  --st-lost: #71717a;
+  --success: #4ade9f;
+  --success-soft: #11291f;
+  --warn: #a1a1aa;
+  --danger: #ff7a6b;
+
+  --card-shadow: 0 0 0 0 transparent;
+  --pop-shadow: 0 0 0 1px #2e2e33, 0 18px 44px -10px rgb(0 0 0 / 0.7);
+  --lift-shadow: 0 0 0 0 transparent;
+
+  --glass: rgb(14 14 16 / 0.62);
+  --glass-line: rgb(255 255 255 / 0.12);
+  --glass-fg: #f5f5f6;
+  --glass-muted: #cdcdd3;
+
+  --delta-up-bg: #10291e;
+  --delta-up-fg: #5ee3a8;
+  --delta-down-bg: #27272b;
+  --delta-down-fg: #c4c4cc;
+  --delta-flat-bg: #27272b;
+  --delta-flat-fg: #c4c4cc;
+
+  --avatar-1-bg: #1b2747;
+  --avatar-1-fg: #a8c1ff;
+  --avatar-2-bg: #10302d;
+  --avatar-2-fg: #7fe0d4;
+  --avatar-3-bg: #26214a;
+  --avatar-3-fg: #c2b9ff;
+  --avatar-4-bg: #13301f;
+  --avatar-4-fg: #86e0a5;
+  --avatar-5-bg: #182a3a;
+  --avatar-5-fg: #9ccbf0;
+}
+
+/* Everlast: indigo */
+:root[data-theme="everlast"] {
+  --accent: #5148e0;
+  --accent-soft: #ecebfd;
+  --accent-fg: #4338ca;
+  --primary: #5148e0;
+  --primary-hover: #453bcf;
+  --chart-2: #a9a3f3;
+  --heat-1: #e3e1fc;
+  --heat-2: #bcb8f6;
+  --heat-3: #8a83ec;
+  --heat-4: #5148e0;
+}
+
+[data-theme="everlast"].dark,
+[data-theme="everlast"] .dark {
+  --accent: #8a84ff;
+  --accent-soft: #23213f;
+  --accent-fg: #b3aeff;
+  --chart-2: #cfcbff;
+  --heat-1: #201e42;
+  --heat-2: #353080;
+  --heat-3: #5e56d6;
+  --heat-4: #9c97ff;
+}
+
+/* refundrebel: teal */
+:root[data-theme="refundrebel"] {
+  --accent: #0d8f86;
+  --accent-soft: #def3f0;
+  --accent-fg: #0b6b64;
+  --primary: #0f766e;
+  --primary-hover: #0c6660;
+  --chart-2: #6cc5bb;
+  --heat-1: #d5f0ec;
+  --heat-2: #94d9d1;
+  --heat-3: #3fb3a8;
+  --heat-4: #0d8f86;
+}
+
+[data-theme="refundrebel"].dark,
+[data-theme="refundrebel"] .dark {
+  --accent: #2cc4b5;
+  --accent-soft: #122a29;
+  --accent-fg: #6fe0d3;
+  --chart-2: #a3e9e0;
+  --heat-1: #0f2a29;
+  --heat-2: #174d48;
+  --heat-3: #1f8f85;
+  --heat-4: #46dccd;
+}
+
+html,
+body {
+  background: var(--canvas);
+  color: var(--fg);
+}
+
+/* A dark island inside a light page brings its own surface and text colour. */
+.dark:not(:root) {
+  color: var(--fg);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-optical-sizing: auto;
+  font-feature-settings: var(--body-features);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+
+@utility heading {
+  font-family: var(--font-display);
+  font-weight: var(--heading-weight);
+  letter-spacing: var(--heading-tracking);
+}
+
+@utility display-title {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+}
+
+@utility eyebrow {
+  font-size: var(--eyebrow-size);
+  line-height: 1.25rem;
+  font-weight: var(--eyebrow-weight);
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: var(--eyebrow-transform);
+}
+
+/* Figures that sit in columns or count up keep one width per digit. */
+@utility figures {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "calt" 1;
+}
+
+@utility shadow-lift {
+  box-shadow: var(--lift-shadow);
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible {
+    outline-width: 1px;
+    outline-offset: 0;
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.scroll-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* Press feedback: a slight sink on pointer press. */
+@utility press {
+  transition-property: transform, background-color, color, border-color, box-shadow, opacity;
+  transition-duration: 160ms;
+  transition-timing-function: var(--ease-out);
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+/* Motion off: the system setting, or the switch in the app's settings. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Frosted glass on the login photo: blur and a flat tint, no gradient. */
+.glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid var(--glass-line);
+}
+
+/* Mode switch: a short cross-fade of the whole page through the View Transitions API. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: var(--ease-out);
+}
+
+@keyframes grow-y {
+  from {
+    transform: scaleY(0.04);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.animate-grow-y {
+  transform-origin: bottom;
+  animation: grow-y 520ms var(--ease-out) both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 200ms var(--ease-out) both;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-pop-in {
+  transform-origin: top;
+  animation: pop-in 180ms var(--ease-out) both;
+}
+
+@keyframes ring-draw {
+  from {
+    stroke-dashoffset: var(--ring-length);
+  }
+}
+
+.animate-ring {
+  animation: ring-draw 700ms var(--ease-out) both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise-in {
+  animation: rise-in 260ms var(--ease-out) both;
+}
+
+/* Page content when the route changes. */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-page-in {
+  animation: page-in 240ms var(--ease-out) both;
+}
+
+/* Radix popovers, menus and tooltips: open with a small scale from their anchor, close faster. */
+@keyframes pop-open {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes pop-close {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.animate-pop[data-state="open"],
+.animate-pop[data-state="delayed-open"],
+.animate-pop[data-state="instant-open"] {
+  transform-origin: var(--radix-popper-transform-origin, var(--radix-tooltip-content-transform-origin, top));
+  animation: pop-open 180ms var(--ease-out);
+}
+
+.animate-pop[data-state="closed"] {
+  transform-origin: var(--radix-popper-transform-origin, var(--radix-tooltip-content-transform-origin, top));
+  animation: pop-close 120ms var(--ease-out) forwards;
+}
+
+@keyframes shimmer-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.skeleton {
+  background: var(--hover);
+  border-radius: 8px;
+  animation: shimmer-pulse 1.6s ease-in-out infinite;
+}
+
+/* Recharts: no focus rectangle around the whole chart, the marks carry focus. */
+.recharts-wrapper:focus,
+.recharts-surface:focus,
+.recharts-wrapper *:focus:not(:focus-visible) {
+  outline: none;
+}

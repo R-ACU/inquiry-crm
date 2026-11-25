@@ -6,6 +6,8 @@ A small CRM for a catering and events business that receives inquiries by web fo
 
 All data is invented. "Lindgrün Catering & Events" is not a real business.
 
+**Live demo:** https://anfragen-crm.vercel.app (one click on the login page signs in as the owner or as staff; the data is reset every night).
+
 ![Overview as a bento grid: pipeline value as pill bars on a dark hero card, new and open inquiries, won volume, win-rate gauge, upcoming events and inquiries per week](docs/screenshots/overview-desktop.png)
 
 *All screenshots come from the local preview with invented data; the assistant runs in test mode there (fixed answers, no model call). Deutsche Kurzfassung am Ende.*
@@ -93,7 +95,7 @@ Not measured yet, because it needs the real Claude API: quality of summaries and
 
 ## Limits
 
-- No real Supabase project has been created yet. Everything above ran against the local stand-in. "Go live" below lists the steps.
+- The live demo runs on the Supabase free plan (Frankfurt) and Vercel, with the assistant in test mode. It is reset to the seed every night, so whatever a visitor changes is gone the next day. Test figures above come from the local stand-in.
 - Inquiries cannot be created by hand in the UI; they arrive through the API.
 - No e-mail sending, no payments, no two-way calendar sync (see [DECISIONS.md](DECISIONS.md)).
 - On the dev server (`npm run preview`), Next.js 16.4 does not learn the route of the page that was loaded first, nor of the start page after sign-in, so a return there waits for the server once more (about 0.3 to 0.5 s; the previous page stays visible, no placeholder). The production build prefetches the links and has no such wait.
@@ -181,7 +183,7 @@ API keys are created by an owner under "Team und API". The key is shown once and
 
 ## Go live
 
-Steps for the first deployment. Nothing here has been run yet.
+Steps as run for the live demo.
 
 1. **Create the Supabase project.** supabase.com, New project, region `eu-central-1` (Frankfurt). Store the database password in a password manager.
 2. **Link the repository.**
@@ -194,12 +196,12 @@ Steps for the first deployment. Nothing here has been run yet.
    npx supabase db push              # runs supabase/migrations
    npx supabase config push          # sign-up disabled, password rules, site URL from config.toml
    ```
-   Then in the dashboard under Authentication, URL Configuration, set the Site URL to the Vercel URL from step 5.
+   Then in the dashboard under Authentication, URL Configuration, set the Site URL to the Vercel URL from step 5 (every `config push` sets it back to the local one). Keep `[auth.email] enable_signup = true` in `config.toml`: on hosted Supabase that switch is the whole e-mail provider, and `false` blocks sign-in with e-mail and password ("Email logins are disabled"). Sign-ups stay closed through `[auth] enable_signup = false`; `tests/unit/supabase-config.test.ts` guards both.
 4. **Load the demo data.**
    ```bash
    npx supabase db push --include-seed
    ```
-   (Alternative: paste `supabase/seed.sql` into the SQL editor.) To reset the demo later: `npx supabase db reset --linked` deletes all data and runs migrations and seed again, which also brings the demo dates to that day.
+   If the CLI reaches the database through Supabase's connection pooler (no IPv6), the seed fails with `schema "pg_temp" does not exist`: it uses temporary helper functions, which need one session. Then paste `supabase/seed.sql` into the SQL editor instead, or run it with `psql` over the direct connection. The seed moves all dates to the day it runs. The live demo is reset every night by emptying the public tables and the auth users and running the seed again in one session.
 5. **Deploy on Vercel.** Import the GitHub repository, framework Next.js. Environment variables (Production and Preview):
    | Name | Value |
    | :--- | :--- |
@@ -207,11 +209,12 @@ Steps for the first deployment. Nothing here has been run yet.
    | `SUPABASE_PUBLISHABLE_KEY` | Project Settings, API Keys, publishable key (not the secret key) |
    | `APP_URL` | `https://<your-app>.vercel.app` |
    | `AI_MODE` | `mock` (keep it for a public demo; see step 8) |
+   | `DEMO_LOGIN_PASSWORD`, `DEMO_LOGIN_ACCOUNTS` | Public demo only: the seed password and a JSON list such as `[{"email":"lena@lindgruen.example","name":"Lena Hoffmann","role":"Inhaberin"}]`. The login page then shows a "Demo-Zugang" card with one sign-in button per account. They are read when the page is built, so redeploy after changing them. Leave both unset anywhere else. |
 6. **Test login.** Open the Vercel URL, sign in as `jonas@lindgruen.example` with `Lindgruen-Demo-2026`: 12 inquiries. Then as `lena@lindgruen.example`: 30 inquiries, and "Team und API" is visible.
 7. **Smoke-test the API.** As Lena, create a key under "Team und API", run the curl example above against the Vercel URL, expect `201`, and see the inquiry under "Neu".
 8. **Optional: real AI, not for a public demo.** Set `AI_MODE=anthropic` and `ANTHROPIC_API_KEY` in Vercel only for a private deployment. Every "Entwurf erstellen" then costs API credits; the database allows 6 drafts per person in 10 minutes and 100 per day. Also set a monthly spend limit in the Anthropic Console.
 9. **Check.** Supabase dashboard, Advisors, Security: there should be no RLS warnings. Regenerate the TypeScript types from the live schema: `npx supabase gen types typescript --linked > src/lib/supabase/database.types.ts`.
-10. **Before sharing the link.** The seed passwords are public in this README. Keep `AI_MODE=mock`, share the staff logins openly and the owner login only on request, or reset the demo regularly (step 4).
+10. **Before sharing the link.** The seed passwords are public in this README, and the demo card shows them on the login page. Keep `AI_MODE=mock` and reset the demo regularly (step 4); anything a visitor adds as the owner (API keys, inquiries, team members) disappears with the next reset.
 
 ## License
 
@@ -231,6 +234,8 @@ MIT, see [LICENSE](LICENSE).
 
 **Ergebnis.** 446 Vitest-Tests (davon 100 gegen eine echte Postgres-Engine mit den ausgelieferten Migrationen) und 30 Playwright-Tests sind grün. Ein schon besuchter Bereich ist beim Zurückwechseln in 30 bis 90 ms vollständig da, ohne Ladeanimation und ohne Anfrage an den Server; nach dem Abmelden bleibt nichts von der Sitzung im Tab. Eine absichtlich kaputte Policy ließ 7 Datenbanktests fehlschlagen, die alten Rechte von vor der Sicherheitsprüfung 6. Qualität, Dauer und Kosten der KI-Entwürfe sind noch nicht gemessen, das geht erst mit der echten API.
 
-**Grenzen.** Noch kein echtes Supabase-Projekt (Schritte oben unter "Go live"), keine manuelle Anfrage-Erfassung, kein Mailversand, keine Zahlung. Details in [SECURITY.md](SECURITY.md) und [DECISIONS.md](DECISIONS.md).
+**Live:** https://anfragen-crm.vercel.app, ein Klick auf der Anmeldeseite meldet als Inhaberin oder Mitarbeiter an, die Daten werden jede Nacht zurückgesetzt.
+
+**Grenzen.** Kostenloses Supabase-Projekt, Assistent im Testmodus, keine manuelle Anfrage-Erfassung, kein Mailversand, keine Zahlung. Details in [SECURITY.md](SECURITY.md) und [DECISIONS.md](DECISIONS.md).
 
 **Starten.** `npm ci`, dann `npm run preview`, dann http://127.0.0.1:3210 öffnen (mit `?firma=everlast` oder `?firma=refundrebel` im Firmenstil). Passwort für alle drei Konten: `Lindgruen-Demo-2026`.

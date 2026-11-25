@@ -1,7 +1,7 @@
 "use client";
 
 import { useOptimistic, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { UsersRound } from "lucide-react";
 import { setMemberRole } from "@/lib/actions/team";
 import { ROLE_LABELS } from "@/lib/domain/status";
@@ -9,6 +9,8 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { Avatar } from "@/components/ui/avatar";
 import { Panel } from "@/components/ui/page-header";
 import { useToast } from "@/components/shell/providers";
+import { VIEW_KEYS, refreshViews } from "@/lib/client/views";
+import type { TeamData } from "@/lib/data/views";
 
 type Role = "owner" | "staff";
 
@@ -20,7 +22,7 @@ const ROLE_OPTIONS = [
 function MemberRow({ member, isViewer }: { member: { id: string; fullName: string; role: Role }; isViewer: boolean }) {
   const [role, setRole] = useOptimistic(member.role);
   const [pending, startTransition] = useTransition();
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const toast = useToast();
 
   return (
@@ -52,7 +54,11 @@ function MemberRow({ member, isViewer }: { member: { id: string; fullName: strin
               return;
             }
             toast("success", `${member.fullName} ist jetzt ${ROLE_LABELS[next]}.`);
-            router.refresh();
+            // Write the new role into the cached view first, so the row keeps it when the optimistic value ends.
+            queryClient.setQueryData<TeamData>(VIEW_KEYS.team, (data) =>
+              data ? { ...data, team: data.team.map((m) => (m.id === member.id ? { ...m, role: next } : m)) } : data,
+            );
+            await refreshViews(queryClient);
           })
         }
       />

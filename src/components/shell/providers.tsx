@@ -18,7 +18,28 @@ export function useToast() {
   return useContext(ToastContext);
 }
 
-export function Providers({ children }: { children: ReactNode }) {
+export interface ShellMember {
+  id: string;
+  fullName: string;
+  email: string;
+  role: "owner" | "staff";
+}
+
+const MemberContext = createContext<ShellMember | null>(null);
+
+/** The signed-in member, for client views. Shapes the UI only; RLS checks every query. */
+export function useMember(): ShellMember {
+  const member = useContext(MemberContext);
+  if (!member) throw new Error("useMember is only available inside the app shell");
+  return member;
+}
+
+/**
+ * Client state of one signed-in member: the query cache, toasts and the
+ * member itself. The app layout keys it by member, so another sign-in in the
+ * same tab starts from an empty cache.
+ */
+export function Providers({ member, children }: { member: ShellMember; children: ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -35,6 +56,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <MemberContext value={member}>
       <MotionProvider>
       <TooltipProvider>
       <ToastContext value={push}>
@@ -69,6 +91,7 @@ export function Providers({ children }: { children: ReactNode }) {
       </ToastContext>
       </TooltipProvider>
       </MotionProvider>
+      </MemberContext>
     </QueryClientProvider>
   );
 }

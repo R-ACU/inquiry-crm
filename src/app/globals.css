@@ -539,6 +539,26 @@ body {
   animation: shimmer-pulse 1.6s ease-in-out infinite;
 }
 
+/*
+ * Loading placeholders only appear when loading really takes a moment: a
+ * view that is there within 400 ms never flashes a skeleton. The delay is
+ * not motion, so it also holds with reduced motion (the rules above set
+ * every delay to 0).
+ */
+.loading-delayed {
+  animation: fade-in 200ms var(--ease-out) 400ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root .loading-delayed {
+    animation-delay: 400ms !important;
+  }
+}
+
+:root[data-motion="reduce"] .loading-delayed {
+  animation-delay: 400ms !important;
+}
+
 /* Recharts: no focus rectangle around the whole chart, the marks carry focus. */
 .recharts-wrapper:focus,
 .recharts-surface:focus,

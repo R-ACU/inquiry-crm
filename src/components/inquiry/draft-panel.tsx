@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { refreshViews } from "@/lib/client/views";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Copy, Sparkles } from "lucide-react";
 import { acceptDraft, discardDraft, requestDraft } from "@/lib/actions/inquiries";
@@ -65,7 +66,7 @@ export function DraftPanel({
       }
       if (kind === "accept") {
         toast("success", "Entwurf als Notiz übernommen.");
-        await queryClient.invalidateQueries({ queryKey: ["board"] });
+        await refreshViews(queryClient);
       }
       if (kind === "discard") toast("success", "Entwurf verworfen.");
       router.refresh();

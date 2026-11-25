@@ -21,8 +21,7 @@ import {
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
-import { signOut } from "@/lib/actions/auth";
-import { BOARD_KEY, fetchBoard } from "@/lib/client/board-query";
+import { BOARD_KEY, fetchBoard } from "@/lib/client/views";
 import { ROLE_LABELS } from "@/lib/domain/status";
 import { formatRelativeDay } from "@/lib/domain/time";
 import { MOTION_KEY } from "@/lib/theme/themes";
@@ -33,6 +32,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { SPRING } from "@/components/ui/segmented";
 import { setMode, useCompany, useMode } from "@/components/theme/theme-client";
 import { CommandPalette } from "./command-palette";
+import type { ShellMember } from "./providers";
 import { cn } from "@/lib/cn";
 
 interface NavItem {
@@ -49,13 +49,6 @@ const NAV: NavItem[] = [
   { href: "/contacts", label: "Kontakte", icon: UsersRound, key: "k" },
   { href: "/team", label: "Team", icon: Settings2, key: "t", ownerOnly: true },
 ];
-
-export interface ShellMember {
-  id: string;
-  fullName: string;
-  email: string;
-  role: "owner" | "staff";
-}
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -130,7 +123,8 @@ export function AppHeader({ member }: { member: ShellMember }) {
         return;
       }
       if (event.key === "/") {
-        const search = document.querySelector<HTMLInputElement>("[data-page-search]");
+        // Pages kept alive for a quick return stay in the document, hidden; take the visible field.
+        const search = [...document.querySelectorAll<HTMLInputElement>("[data-page-search]")].find((field) => field.offsetParent !== null);
         event.preventDefault();
         if (search) search.focus();
         else setPalette(true);
@@ -193,7 +187,8 @@ export function AppHeader({ member }: { member: ShellMember }) {
             <ProfileMenu member={member} owner={owner} onSettings={showSettings} onShortcuts={showShortcuts} onSignOut={doSignOut} />
           </div>
         </div>
-        <form ref={signOutForm} action={signOut} hidden />
+        {/* A plain form post: the browser loads /login afresh, so no data of this session stays in the tab. */}
+        <form ref={signOutForm} method="post" action="/api/auth/sign-out" hidden />
       </header>
 
       {/* Phone: the same areas as a tab bar at the bottom, in thumb reach. */}

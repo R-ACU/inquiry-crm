@@ -33,6 +33,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  // A page visited in this tab is reused for five minutes when the user comes back, instead of being
+  // rendered again with its loading placeholder. The views keep their data fresh themselves
+  // (lib/client/views.ts); a Server Action that revalidates and every sign-in or sign-out clear it.
+  experimental: { staleTimes: { dynamic: 300 } },
   poweredByHeader: false,
   turbopack: {
     rules: {

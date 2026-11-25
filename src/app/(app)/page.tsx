@@ -1,38 +1,21 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { requireMember } from "@/lib/auth/dal";
-import { listOverviewData } from "@/lib/data/queries";
-import { toStatusChange, type OverviewInquiry, type StatusChange } from "@/lib/domain/overview";
-import { Overview } from "@/components/overview/overview";
+import { loadOverview } from "@/lib/data/views";
+import { OverviewView } from "@/components/overview/overview";
 
 export const metadata: Metadata = { title: "Übersicht" };
 
 export default function OverviewPage() {
   return (
     <Suspense fallback={<OverviewSkeleton />}>
-      <OverviewLoader />
+      <OverviewView data={loadOverview()} />
     </Suspense>
-  );
-}
-
-async function OverviewLoader() {
-  const member = await requireMember();
-  const { inquiries, events, now } = await listOverviewData();
-  const changes = events.map(toStatusChange).filter((c): c is StatusChange => c !== null);
-  return (
-    <Overview
-      inquiries={inquiries as OverviewInquiry[]}
-      changes={changes}
-      now={now}
-      firstName={member.fullName.split(" ")[0]}
-      owner={member.role === "owner"}
-    />
   );
 }
 
 function OverviewSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Übersicht wird geladen" className="flex flex-col gap-6 md:gap-7">
+    <div aria-busy="true" aria-label="Übersicht wird geladen" className="loading-delayed flex flex-col gap-6 md:gap-7">
       <div className="flex items-end justify-between gap-4">
         <div>
           <div className="skeleton h-8 w-44" />

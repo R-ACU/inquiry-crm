@@ -1,14 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
 import { ArrowUpRight, Building2, Inbox, Mail, Phone, UserRound, UsersRound, type LucideIcon } from "lucide-react";
 import { formatRelativeDay } from "@/lib/domain/time";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/ui/avatar";
 import { IconCircle, PageHeader, SearchField } from "@/components/ui/page-header";
 import { useCountUp } from "@/components/overview/use-count-up";
+import { useMember } from "@/components/shell/providers";
+import { VIEW_KEYS, fetchView, useFirstAppearance, useViewData } from "@/lib/client/views";
+import { EntranceContext, useEntrance } from "@/components/ui/entrance";
+import { useRiseIn } from "@/components/ui/rise-in";
+import type { ContactsData } from "@/lib/data/views";
 
 interface ContactRow {
   id: string;
@@ -82,8 +86,41 @@ function Stat({ icon, label, value, tone }: { icon: LucideIcon; label: string; v
   );
 }
 
+/**
+ * A table row that rises in when it appears (first load, a search that
+ * brings it back), and only then; rows of a view rebuilt from the cache just
+ * stand there (see ui/entrance.ts and ui/rise-in.ts).
+ */
+function RiseInRow({ index, rise, className, children }: { index: number; rise: boolean; className: string; children: ReactNode }) {
+  const ref = useRiseIn<HTMLTableRowElement>(rise, Math.min(index, 12) * 20);
+  return (
+    <tr ref={ref} className={className}>
+      {children}
+    </tr>
+  );
+}
+
+/** The contacts page: cached after the first visit, refreshed in the background. */
+export function ContactsView({ contacts }: { contacts: Promise<ContactsData> }) {
+  const member = useMember();
+  const entrance = useFirstAppearance("contacts");
+  const data = useViewData(VIEW_KEYS.contacts, contacts, () => fetchView<ContactsData>("contacts"));
+  return (
+    <EntranceContext value={entrance}>
+      <ContactsTable contacts={data} owner={member.role === "owner"} />
+    </EntranceContext>
+  );
+}
+
 export function ContactsTable({ contacts, owner }: { contacts: ContactRow[]; owner: boolean }) {
   const [search, setSearch] = useState("");
+  // Rows of the first render rise in only on the view's entrance; rows a search brings back always do.
+  const entrance = useEntrance();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
     if (!needle) return contacts;
@@ -137,11 +174,10 @@ export function ContactsTable({ contacts, owner }: { contacts: ContactRow[]; own
               </thead>
               <tbody>
                 {filtered.map((contact, index) => (
-                  <motion.tr
+                  <RiseInRow
                     key={contact.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ type: "spring", duration: 0.3, bounce: 0.1, delay: Math.min(index, 12) * 0.02 }}
+                    index={index}
+                    rise={entrance || mounted}
                     className="group [&>td]:transition-colors [&>td]:duration-150 hover:[&>td]:bg-hover [&>td:first-child]:rounded-l-2xl [&>td:last-child]:rounded-r-2xl"
                   >
                     <td className="px-4 py-2.5">
@@ -189,7 +225,7 @@ export function ContactsTable({ contacts, owner }: { contacts: ContactRow[]; own
                         <span className="text-muted">keine</span>
                       )}
                     </td>
-                  </motion.tr>
+                  </RiseInRow>
                 ))}
               </tbody>
             </table>

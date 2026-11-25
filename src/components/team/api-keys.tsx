@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useLayoutEffect, useState, useTransition } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Copy, KeyRound, ShieldCheck, Terminal } from "lucide-react";
 import { createApiKey, revokeApiKey } from "@/lib/actions/team";
@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { inputClasses } from "@/components/ui/input";
 import { Panel } from "@/components/ui/page-header";
 import { useToast } from "@/components/shell/providers";
+import { VIEW_KEYS, refreshViews } from "@/lib/client/views";
+import type { TeamData } from "@/lib/data/views";
 import { cn } from "@/lib/cn";
 
 interface ApiKeyRow {
@@ -44,7 +46,7 @@ function CopyButton({ text, label, className }: { text: string; label: string; c
 function KeyRow({ apiKey }: { apiKey: ApiKeyRow }) {
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const toast = useToast();
   const revoked = Boolean(apiKey.revoked_at);
 
@@ -86,7 +88,11 @@ function KeyRow({ apiKey }: { apiKey: ApiKeyRow }) {
                   setConfirming(false);
                   if (!result.ok) return toast("error", result.error);
                   toast("success", `Schlüssel ${apiKey.name} widerrufen.`);
-                  router.refresh();
+                  const now = new Date().toISOString();
+                  queryClient.setQueryData<TeamData>(VIEW_KEYS.team, (data) =>
+                    data ? { ...data, keys: data.keys.map((k) => (k.id === apiKey.id ? { ...k, revoked_at: now } : k)) } : data,
+                  );
+                  await refreshViews(queryClient);
                 })
               }
             >
@@ -112,8 +118,10 @@ export function ApiKeys({ keys, endpoint, className }: { keys: ApiKeyRow[]; endp
   const [name, setName] = useState("");
   const [created, setCreated] = useState<{ key: string; name: string } | null>(null);
   const [pending, startTransition] = useTransition();
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const toast = useToast();
+  // The new key is shown once. Leaving the page hides it for good, even though the page itself stays alive for a quick return.
+  useLayoutEffect(() => () => setCreated(null), []);
 
   const example = `curl -X POST ${endpoint} \\
   -H "Authorization: Bearer ${created?.key ?? "<SCHLÜSSEL>"}" \\
@@ -154,7 +162,7 @@ export function ApiKeys({ keys, endpoint, className }: { keys: ApiKeyRow[]; endp
             if (!result.ok) return toast("error", result.error);
             setCreated({ key: result.data!.key, name });
             setName("");
-            router.refresh();
+            await refreshViews(queryClient);
           });
         }}
       >

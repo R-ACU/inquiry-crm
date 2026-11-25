@@ -3,6 +3,7 @@
 import { useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { refreshViews } from "@/lib/client/views";
 import { assignInquiry } from "@/lib/actions/inquiries";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Avatar, EmptyAvatar } from "@/components/ui/avatar";
@@ -51,7 +52,7 @@ export function AssigneeControl({
           }
           const name = team.find((m) => m.id === next)?.fullName;
           toast("success", name ? `${name} ist jetzt zuständig.` : "Zuweisung entfernt.");
-          await queryClient.invalidateQueries({ queryKey: ["board"] });
+          await refreshViews(queryClient);
           router.refresh();
         })
       }

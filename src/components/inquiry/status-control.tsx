@@ -3,6 +3,7 @@
 import { useOptimistic, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
+import { refreshViews } from "@/lib/client/views";
 import { motion } from "motion/react";
 import { moveInquiry } from "@/lib/actions/inquiries";
 import { INQUIRY_STATUSES, STATUS_LABELS, type InquiryStatus } from "@/lib/domain/status";
@@ -29,7 +30,7 @@ export function StatusControl({ inquiryId, status }: { inquiryId: string; status
         return;
       }
       toast("success", `Stand auf ${STATUS_LABELS[next]} gesetzt.`);
-      await queryClient.invalidateQueries({ queryKey: ["board"] });
+      await refreshViews(queryClient);
       router.refresh();
     });
   }

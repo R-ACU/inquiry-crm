@@ -6,7 +6,7 @@ Why the CRM is built the way it is, what happens when something fails, and what 
 
 **The database enforces access, not the UI.** Every rule about who sees what lives in Postgres RLS policies and column privileges (`supabase/migrations`). The UI hides buttons for convenience only. A forgotten check in a Server Action therefore leaks nothing: the query still runs as the signed-in user.
 
-**The browser never talks to Supabase.** All reads and writes go through Server Components, Server Actions and two route handlers, each with the user's session. This keeps the session cookies `HttpOnly`, keeps the anon key off the client, and gives one place (`src/lib/data`, `src/lib/actions`) to read when reviewing data access.
+**The browser never talks to Supabase.** All reads and writes go through Server Components, Server Actions and a few route handlers, each with the user's session. This keeps the session cookies `HttpOnly`, keeps the anon key off the client, and gives one place (`src/lib/data`, `src/lib/actions`) to read when reviewing data access.
 
 **No service-role key in the app.** The public intake API calls one narrow `security definer` function as `anon` instead. If the app's environment leaked, nothing in it bypasses RLS.
 
@@ -22,7 +22,9 @@ Why the CRM is built the way it is, what happens when something fails, and what 
 
 **Throttles live in the database.** Serverless instances share no memory, so every limit that matters (API keys, sign-in failures, AI drafts) is counted in Postgres. The in-memory throttle on the intake route is only a cheap first filter.
 
-**State management.** Server Components render pages. The pipeline board uses TanStack Query, because moving a card should feel instant: the move is applied optimistically, the Server Action writes it, and on an error the card snaps back with a message. Everything else uses `useOptimistic` and `router.refresh()`; a second client cache there would only duplicate the server state.
+**State management.** Server Components render pages; the inquiry detail page also renders its data on the server and refreshes with `useOptimistic` and `router.refresh()`. The four main areas (overview, board, contacts, team) keep their data in TanStack Query instead, because switching between them should feel like an app, not like loading a page: the page passes the server's promise to its view, which waits for it only on the first visit and then renders from the cache, refreshing quietly in the background (`/api/views/:view`, same loaders, same RLS). Next.js keeps visited pages for five minutes (`staleTimes.dynamic`) and the last three alive and hidden, so a return needs no server at all. After a change every cached view refetches at once, also the hidden ones; moving a card is still applied optimistically and snaps back on an error. The cache belongs to one member: the app layout keys all client state by member and role, and signing out is a plain form post that reloads the page.
+
+**Entrances play once.** Numbers count up, charts grow and rows rise in when a view first appears. A kept page that is shown again, or a view rebuilt from the cache, appears as it is, because replaying the entrance looks like loading. CSS animations restart whenever a hidden element is shown again and Motion replays its entrances in the same case, so rows and cards rise in through the Web Animations API, started once per element (`components/ui/rise-in.ts`). Loading placeholders appear only after 0.4 s, so a quick first visit shows none.
 
 **Money and time.** Budgets are integer cents. Event dates and times are stored as wall-clock values in Europe/Berlin, because that is how a caterer thinks about an event. The calendar export converts them to UTC, which every calendar app reads correctly without a time zone block; daylight saving is covered by tests.
 
@@ -57,6 +59,7 @@ Why the CRM is built the way it is, what happens when something fails, and what 
 - A staff member could have pointed one of their own inquiries at any contact ID and thereby made that contact visible through the contacts policy. Closed with column privileges (`contact_id` is not updatable) and a test.
 - Next.js 16 with Cache Components flagged `Date.now()` inside the Supabase auth client during prerendering. Fixed by calling `connection()` before the session is read, so session-dependent work is always request-time.
 - The first drag-and-drop browser test moved the wrong card: Playwright scrolled the long target column into view while the mouse button was down. The test now drops on the column header, which stays in view.
+- Every switch between the areas rendered the page again on the server and showed its skeleton, even for a view seen seconds before. Now the views render from the client cache and Next.js reuses visited pages; `e2e/navigation.spec.ts` holds the server answer back and still expects the view at once. On the way, two things came up: returning to a kept page replayed every entrance animation, and after signing out the previous person's board stayed hidden in the page. Both are fixed and tested.
 
 ### Found in the security and design review
 

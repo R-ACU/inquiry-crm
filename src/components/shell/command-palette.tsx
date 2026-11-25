@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { useQuery } from "@tanstack/react-query";
 import { CornerDownLeft, FileText, Keyboard, LayoutDashboard, LogOut, Search, Settings2, SlidersHorizontal, UsersRound, Inbox } from "lucide-react";
-import { BOARD_KEY, fetchBoard } from "@/lib/client/board-query";
+import { BOARD_KEY, fetchBoard } from "@/lib/client/views";
 import { Dialog } from "@/components/ui/dialog";
 import { StatusDot } from "@/components/status";
 import { cn } from "@/lib/cn";

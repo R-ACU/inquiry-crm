@@ -23,6 +23,10 @@ import { buttonClasses } from "@/components/ui/button";
 import { ArrowLink, IconCircle, PageHeader, Panel } from "@/components/ui/page-header";
 import { DeltaChip, PipelineBars, SparkArea, SparkBars, ValueLegend, WeeklyBars, WinGauge, type PipelineRow, type WeekRow } from "./charts";
 import { useCountUp } from "./use-count-up";
+import { useMember } from "@/components/shell/providers";
+import { VIEW_KEYS, fetchView, useFirstAppearance, useViewData } from "@/lib/client/views";
+import { EntranceContext } from "@/components/ui/entrance";
+import type { OverviewData } from "@/lib/data/views";
 import { cn } from "@/lib/cn";
 
 const PERIOD_LABELS: Record<PeriodDays, string> = { 7: "7 Tage", 30: "30 Tage", 90: "90 Tage" };
@@ -54,6 +58,27 @@ function cumulative(values: number[]): number[] {
 
 const weekday = (t: number) => weekdayShort.format(t).replace(".", "");
 
+/** The overview page: cached after the first visit, refreshed in the background. */
+export function OverviewView({ data }: { data: Promise<OverviewData> }) {
+  const member = useMember();
+  // Rebuilt from the cache, the overview appears without its entrance; switching the period animates again.
+  const entrance = useFirstAppearance("overview");
+  const [periodChanged, setPeriodChanged] = useState(false);
+  const { inquiries, changes, now } = useViewData(VIEW_KEYS.overview, data, () => fetchView<OverviewData>("overview"));
+  return (
+    <EntranceContext value={entrance || periodChanged}>
+      <Overview
+        inquiries={inquiries}
+        changes={changes}
+        now={now}
+        firstName={member.fullName.split(" ")[0]}
+        owner={member.role === "owner"}
+        onPeriodChange={() => setPeriodChanged(true)}
+      />
+    </EntranceContext>
+  );
+}
+
 /**
  * The overview as a bento grid: one large dark hero for the pipeline, the
  * key figures around it in cards of different sizes, the gauge and the
@@ -66,12 +91,14 @@ export function Overview({
   now,
   firstName,
   owner,
+  onPeriodChange,
 }: {
   inquiries: OverviewInquiry[];
   changes: StatusChange[];
   now: number;
   firstName: string;
   owner: boolean;
+  onPeriodChange?: () => void;
 }) {
   const [period, setPeriod] = useState<PeriodDays>(30);
   const data = useMemo(() => computeOverview(inquiries, changes, period, now), [inquiries, changes, period, now]);
@@ -137,7 +164,10 @@ export function Overview({
           <Segmented
             label="Zeitraum"
             value={period}
-            onChange={setPeriod}
+            onChange={(next) => {
+              setPeriod(next);
+              onPeriodChange?.();
+            }}
             options={PERIODS.map((p) => ({ value: p, label: PERIOD_LABELS[p] }))}
             className="self-start sm:self-auto"
           />

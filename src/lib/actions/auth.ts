@@ -50,9 +50,3 @@ export async function signIn(_previous: SignInState, formData: FormData): Promis
   }
   redirect("/");
 }
-
-export async function signOut() {
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
-  redirect("/login");
-}

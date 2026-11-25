@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { CalendarClock, Inbox, SearchX, ShieldQuestion, UsersRound, Wallet } from "lucide-react";
 import type { BoardInquiry } from "@/lib/data/queries";
@@ -12,19 +12,15 @@ import { INQUIRY_STATUSES, isOpen, STATUS_LABELS, type InquiryStatus } from "@/l
 import { Dropdown } from "@/components/ui/dropdown";
 import { buttonClasses } from "@/components/ui/button";
 import { StatusDot } from "@/components/status";
-import { BOARD_KEY, fetchBoard } from "@/lib/client/board-query";
+import { BOARD_KEY, VIEW_KEYS, fetchBoard, fetchView, refreshViews, useFirstAppearance, useViewData } from "@/lib/client/views";
+import type { AssigneesData } from "@/lib/data/views";
 import { DateTile, countdownLabel, daysUntil } from "@/components/date-tile";
 import { Avatar, EmptyAvatar } from "@/components/ui/avatar";
 import { PageHeader, SearchField } from "@/components/ui/page-header";
 import { SPRING } from "@/components/ui/segmented";
-import { useToast } from "@/components/shell/providers";
+import { useMember, useToast } from "@/components/shell/providers";
+import { useRiseIn } from "@/components/ui/rise-in";
 import { cn } from "@/lib/cn";
-
-interface Viewer {
-  id: string;
-  role: "owner" | "staff";
-  firstName: string;
-}
 
 function byEventDate(a: BoardInquiry, b: BoardInquiry) {
   if (a.event_date === b.event_date) return b.created_at.localeCompare(a.created_at);
@@ -34,19 +30,27 @@ function byEventDate(a: BoardInquiry, b: BoardInquiry) {
 }
 
 /**
+ * One place on the board. The card rises in with the board's entrance (once,
+ * see ui/rise-in.ts) and glides when it moves to another column (shared
+ * layout id).
+ */
+function CardSlot({ id, index, rise, children }: { id: string; index: number; rise: boolean; children: ReactNode }) {
+  const ref = useRiseIn<HTMLDivElement>(rise, Math.min(index, 8) * 30);
+  return (
+    <motion.li layout="position" layoutId={`card-${id}`} transition={SPRING}>
+      <div ref={ref}>{children}</div>
+    </motion.li>
+  );
+}
+
+/**
  * The pipeline as four columns. Cards are dragged with the browser's own
  * drag and drop; after a drop the card glides to its new place (shared
  * layout id), the change is saved optimistically and rolled back on error.
  */
-export function Board({
-  initialInquiries,
-  viewer,
-  team,
-}: {
-  initialInquiries: BoardInquiry[];
-  viewer: Viewer;
-  team: { id: string; fullName: string }[];
-}) {
+export function Board({ inquiries: fromServer, team: teamFromServer }: { inquiries: Promise<BoardInquiry[]>; team: Promise<AssigneesData> }) {
+  const member = useMember();
+  const viewer = { id: member.id, role: member.role, firstName: member.fullName.split(" ")[0] };
   const queryClient = useQueryClient();
   const toast = useToast();
   const [search, setSearch] = useState("");
@@ -55,18 +59,18 @@ export function Board({
   const [visibleColumn, setVisibleColumn] = useState<InquiryStatus>("new");
   const [dragging, setDragging] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
-  // Cards rise in once when the board appears; later moves glide instead.
-  const [entered, setEntered] = useState(false);
+  // Cards rise in once when the board first appears (not when a kept board is rebuilt, see
+  // ui/entrance.ts); later moves glide instead.
+  const entrance = useFirstAppearance("board");
+  const [entered, setEntered] = useState(!entrance);
   useEffect(() => {
     const timer = window.setTimeout(() => setEntered(true), 700);
     return () => window.clearTimeout(timer);
   }, []);
 
-  const { data: inquiries } = useQuery({
-    queryKey: BOARD_KEY,
-    queryFn: fetchBoard,
-    initialData: initialInquiries,
-  });
+  // Cached after the first visit, refreshed in the background (lib/client/views.ts).
+  const inquiries = useViewData(BOARD_KEY, fromServer, fetchBoard);
+  const team = useViewData(VIEW_KEYS.assignees, teamFromServer, () => fetchView<AssigneesData>("assignees"));
 
   const move = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: InquiryStatus }) => {
@@ -86,7 +90,8 @@ export function Board({
       toast("error", error.message);
     },
     onSuccess: (_data, { status }) => toast("success", `Verschoben nach ${STATUS_LABELS[status]}.`),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: BOARD_KEY }),
+    // The move changes figures elsewhere too (overview, open counts per contact).
+    onSettled: () => refreshViews(queryClient),
   });
 
   const filtered = useMemo(() => {
@@ -241,21 +246,14 @@ export function Board({
                 </header>
                 <ol className="flex min-h-24 flex-col gap-2">
                   {items.map((inquiry, index) => (
-                    <motion.li
-                      key={inquiry.id}
-                      layout="position"
-                      layoutId={`card-${inquiry.id}`}
-                      initial={entered ? false : { opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ ...SPRING, delay: entered ? 0 : Math.min(index, 8) * 0.03 }}
-                    >
+                    <CardSlot key={inquiry.id} id={inquiry.id} index={index} rise={!entered}>
                       <InquiryCard
                         inquiry={inquiry}
                         showAssignee={viewer.role === "owner"}
                         dragging={dragging === inquiry.id}
                         onDragState={(on) => setDragging(on ? inquiry.id : null)}
                       />
-                    </motion.li>
+                    </CardSlot>
                   ))}
                   {items.length === 0 && (
                     <li className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-line-strong px-3 py-8 text-center text-[13px] text-muted">
@@ -402,7 +400,7 @@ function EmptyBoard({ owner }: { owner: boolean }) {
 
 export function BoardSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Anfragen werden geladen">
+    <div aria-busy="true" aria-label="Anfragen werden geladen" className="loading-delayed">
       <div className="skeleton h-8 w-40" />
       <div className="skeleton mt-3 h-4 w-96 max-w-full" />
       <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

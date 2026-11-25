@@ -23,6 +23,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from "lucide-react";
 import { changeAsPercent, type Delta } from "@/lib/domain/overview";
 import { motionReduced } from "@/components/theme/theme-client";
+import { useEntrance } from "@/components/ui/entrance";
 import { cn } from "@/lib/cn";
 
 /*
@@ -49,9 +50,15 @@ function subscribeMotion(callback: () => void) {
   };
 }
 
-/** True while charts may animate. Server render: no animation, so the first paint is complete. */
+/**
+ * True while charts may animate. Server render: no animation, so the first
+ * paint is complete. A view rebuilt from the cache draws its charts at once
+ * (see ui/entrance.ts).
+ */
 export function useChartMotion(): boolean {
-  return useSyncExternalStore(subscribeMotion, () => !motionReduced(), () => false);
+  const allowed = useSyncExternalStore(subscribeMotion, () => !motionReduced(), () => false);
+  const entrance = useEntrance();
+  return allowed && entrance;
 }
 
 const AXIS_TICK = { fill: "var(--muted)", fontSize: 12 };

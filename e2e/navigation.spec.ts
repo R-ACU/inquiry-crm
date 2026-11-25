@@ -163,7 +163,9 @@ test("after signing out nothing of the session stays in the tab, and the next pe
   await page.waitForURL("/login");
   // Not even hidden: the sign-out loads the login page afresh.
   await expect(page.locator(`[data-inquiry-id="${INQUIRY.ofMira}"]`)).toHaveCount(0);
-  await expect(page.getByText(USERS.owner.name)).toHaveCount(0);
+  // The demo-access card names the demo accounts on purpose; nothing else on the page may.
+  const demoCard = page.getByRole("region", { name: "Demo-Zugang" });
+  await expect(page.getByText(USERS.owner.name)).toHaveCount(await demoCard.getByText(USERS.owner.name).count());
 
   await page.evaluate((id) => {
     const seen: string[] = [];

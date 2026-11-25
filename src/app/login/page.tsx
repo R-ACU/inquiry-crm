@@ -5,6 +5,7 @@ import { Brand } from "@/components/brand";
 import { ThemeNote } from "@/components/theme/theme-client";
 import venue from "@/assets/login-venue.webp";
 import { LoginForm } from "./login-form";
+import { demoAccess } from "@/lib/demo-access";
 
 export const metadata: Metadata = { title: "Anmelden" };
 
@@ -45,7 +46,8 @@ export default function LoginPage() {
         <div className="animate-rise-in mx-auto flex w-full max-w-[22.5rem] flex-1 flex-col justify-center py-12">
           <h1 className="display-title text-[30px] leading-tight">Willkommen zurück</h1>
           <p className="mt-2 text-[15px] leading-relaxed text-muted">Melde dich mit dem Zugang an, den du von deinem Betrieb bekommen hast.</p>
-          <LoginForm />
+          {/* Read at build time: the page is prerendered, so DEMO_LOGIN_* must be set when it is built (Vercel does). */}
+          <LoginForm demo={demoAccess()} />
           <p className="mt-6 text-[13px] leading-relaxed text-muted">
             Zugänge legt die Inhaberin oder der Inhaber an. Passwort vergessen? Dort hilft man dir weiter.
           </p>

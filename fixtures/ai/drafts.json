@@ -1,0 +1,29 @@
+{
+  "e0000000-0000-4000-8000-000000000001": {
+    "summary": "Nordlicht Software plant am 12.12. eine Weihnachtsfeier für etwa 40 Personen im eigenen Büro in der Speicherstadt. Gewünscht sind Fingerfood und ein warmes Hauptgericht, gemischt vegetarisch und mit Fleisch, bei einem Budget von rund 1.500 €.",
+    "questions": [
+      "Wie viele der 40 Gäste essen vegetarisch, und sind auch vegane Gäste dabei?",
+      "Gibt es Allergien oder Unverträglichkeiten, auf die wir achten sollen?",
+      "Gibt es im Büro eine Küche oder Strom für Warmhaltegeräte, und wo können wir anliefern?"
+    ],
+    "eventType": "corporate"
+  },
+  "e0000000-0000-4000-8000-000000000006": {
+    "summary": "Anna Petersen heiratet am 8. Mai 2027 auf Gut Hohenholz und erwartet 90 Gäste. Ob Menü oder Buffet, ist noch offen. Die Torte bringt das Paar selbst mit, das Budget liegt bei 9.500 €.",
+    "questions": [
+      "Wann beginnt der Empfang, und bis wann soll das Catering gebucht werden?",
+      "Tendieren Sie eher zu einem gesetzten Menü oder zu einem Buffet?",
+      "Gibt es in der Scheune eine Küche, oder sollen wir eine mobile Küche mitbringen?"
+    ],
+    "eventType": "wedding"
+  },
+  "e0000000-0000-4000-8000-000000000025": {
+    "summary": "Brandt Immobilien möchte am 18.12. ein Weihnachtsessen für 25 Personen in den eigenen Büroräumen ausrichten, von 19 bis 23 Uhr. Ein Budget ist nicht genannt.",
+    "questions": [
+      "Mit welchem Budget pro Person planen Sie ungefähr?",
+      "Wünschen Sie ein gesetztes Essen oder ein Buffet?",
+      "Gibt es Allergien oder Ernährungsformen, die wir berücksichtigen sollen?"
+    ],
+    "eventType": "corporate"
+  }
+}

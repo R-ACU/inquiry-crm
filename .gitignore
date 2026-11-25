@@ -1,0 +1,47 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# testing (local artifacts, may contain absolute paths)
+/coverage/
+/.vitest/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+*.trace.zip
+
+# next.js
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# supabase local state
+/supabase/.temp/
+/supabase/.branches/
+
+# env files: only the example is tracked
+.env*
+!.env.example
+
+# hosting
+.vercel
+
+# misc
+.DS_Store
+*.pem
+*.log
+npm-debug.log*
+Thumbs.db
+
+# internal agent notes, never part of the public repo
+AGENTS.md
+CLAUDE.md
+TODO.md
+
+# review captures, never published
+/docs/review/

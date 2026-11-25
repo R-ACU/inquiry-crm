@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Actions are pinned to commit SHAs (tag in the comment), so a moved tag
+# cannot change what runs here.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, types, unit, API and RLS tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx next typegen
+      - run: npm run typecheck
+      # Vitest: domain logic, validation, the intake API end to end and the
+      # RLS policies against Postgres (PGlite) with the real migrations.
+      - run: npm test
+      - name: No leftover test code
+        run: "! grep -rn TESTCODE src supabase e2e tests fixtures"
+
+  e2e:
+    name: Build and browser tests
+    runs-on: ubuntu-latest
+    needs: checks
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: http://127.0.0.1:3211
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_local-preview-only
+      APP_URL: http://127.0.0.1:3210
+      AI_MODE: mock
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      # Playwright starts the production server and the local Supabase
+      # stand-in (PGlite with migrations and seed); no real project needed.
+      - run: npm run test:e2e
+        env:
+          PREVIEW_MODE: start
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
